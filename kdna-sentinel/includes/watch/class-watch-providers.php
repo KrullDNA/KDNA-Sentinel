@@ -407,6 +407,24 @@ class KDNA_Sentinel_Wordfence_Provider extends KDNA_Sentinel_Vuln_Provider_Base 
 	private $retry_secs = 60;
 
 	/**
+	 * How long the cached feed index stays fresh, in seconds.
+	 *
+	 * @var int
+	 */
+	private $cache_ttl;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param string   $api_key   Optional API key.
+	 * @param int|null $cache_ttl Feed cache lifetime in seconds (null = 12h default).
+	 */
+	public function __construct( $api_key, $cache_ttl = null ) {
+		parent::__construct( $api_key );
+		$this->cache_ttl = ( null === $cache_ttl ) ? 12 * HOUR_IN_SECONDS : max( 0, (int) $cache_ttl );
+	}
+
+	/**
 	 * @return string
 	 */
 	public function slug() {
@@ -556,11 +574,13 @@ class KDNA_Sentinel_Wordfence_Provider extends KDNA_Sentinel_Vuln_Provider_Base 
 	 */
 	private function cache_ttl() {
 		/**
-		 * Filters the Wordfence feed cache lifetime (seconds). Default 12 hours.
+		 * Filters the Wordfence feed cache lifetime (seconds). Defaults to the
+		 * "Vulnerability data refresh" setting (12 hours out of the box); a
+		 * filtered value always overrides the setting.
 		 *
 		 * @param int $ttl Cache lifetime in seconds.
 		 */
-		return max( 0, (int) apply_filters( 'kdna_sentinel_watch_wordfence_cache_ttl', 12 * HOUR_IN_SECONDS ) );
+		return max( 0, (int) apply_filters( 'kdna_sentinel_watch_wordfence_cache_ttl', $this->cache_ttl ) );
 	}
 
 	/**
@@ -631,14 +651,16 @@ class KDNA_Sentinel_Watch_Providers {
 	 *
 	 * @param string $provider Provider slug.
 	 * @param string $api_key  API key.
+	 * @param array  $options  Extra options (e.g. 'cache_ttl' seconds for Wordfence).
 	 * @return KDNA_Sentinel_Vuln_Provider
 	 */
-	public static function make( $provider, $api_key ) {
+	public static function make( $provider, $api_key, $options = array() ) {
 		if ( 'patchstack' === $provider ) {
 			return new KDNA_Sentinel_Patchstack_Provider( $api_key );
 		}
 		if ( 'wordfence' === $provider ) {
-			return new KDNA_Sentinel_Wordfence_Provider( $api_key );
+			$cache_ttl = isset( $options['cache_ttl'] ) ? (int) $options['cache_ttl'] : null;
+			return new KDNA_Sentinel_Wordfence_Provider( $api_key, $cache_ttl );
 		}
 
 		return new KDNA_Sentinel_WPScan_Provider( $api_key );

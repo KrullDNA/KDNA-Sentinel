@@ -3,7 +3,7 @@ Contributors: krulldna
 Requires at least: 6.5
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.3.1
+Stable tag: 0.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,14 @@ No. Sentinel is not an edge firewall and does not block traffic. It complements
 those tools by covering form spam and plugin patch-lag.
 
 == Changelog ==
+
+= 0.4.0 =
+* Watch: a "Vulnerability data refresh" setting on the Watch tab — Every 6
+  hours / Every 12 hours (recommended) / Once a day — controls how often the
+  Wordfence Intelligence feed is refreshed, in plain language. WPScan and
+  Patchstack are unaffected (they are checked live on every scan). The
+  kdna_sentinel_watch_wordfence_cache_ttl filter still overrides this for
+  developers who want a custom interval.
 
 = 0.3.1 =
 * Watch: the Wordfence Intelligence feed is now cached (processed slug index)

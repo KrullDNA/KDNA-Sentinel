@@ -73,7 +73,8 @@ final class KDNA_Sentinel_Watch {
 
 		$this->scanner = new KDNA_Sentinel_Watch_Scanner(
 			(string) $core->get_setting( 'watch_provider', 'wpscan' ),
-			(string) $core->get_setting( 'watch_api_key', '' )
+			(string) $core->get_setting( 'watch_api_key', '' ),
+			(int) $core->get_setting( 'watch_feed_refresh_hours', 12 )
 		);
 
 		// Daily scan (self-heals the schedule).

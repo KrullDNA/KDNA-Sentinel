@@ -48,14 +48,23 @@ class KDNA_Sentinel_Watch_Scanner {
 	private $api_key;
 
 	/**
+	 * Vulnerability-feed refresh interval in hours (Wordfence provider).
+	 *
+	 * @var int
+	 */
+	private $feed_refresh_hours;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param string $provider_slug Provider slug.
-	 * @param string $api_key       API key.
+	 * @param string $provider_slug      Provider slug.
+	 * @param string $api_key            API key.
+	 * @param int    $feed_refresh_hours Feed refresh interval in hours.
 	 */
-	public function __construct( $provider_slug, $api_key ) {
-		$this->provider_slug = (string) $provider_slug;
-		$this->api_key       = (string) $api_key;
+	public function __construct( $provider_slug, $api_key, $feed_refresh_hours = 12 ) {
+		$this->provider_slug      = (string) $provider_slug;
+		$this->api_key            = (string) $api_key;
+		$this->feed_refresh_hours = max( 1, (int) $feed_refresh_hours );
 	}
 
 	/**
@@ -77,7 +86,11 @@ class KDNA_Sentinel_Watch_Scanner {
 	 */
 	public function scan() {
 		require_once KDNA_SENTINEL_DIR . 'includes/watch/class-watch-providers.php';
-		$provider = KDNA_Sentinel_Watch_Providers::make( $this->provider_slug, $this->api_key );
+		$provider = KDNA_Sentinel_Watch_Providers::make(
+			$this->provider_slug,
+			$this->api_key,
+			array( 'cache_ttl' => $this->feed_refresh_hours * HOUR_IN_SECONDS )
+		);
 
 		// Key-requiring providers (WPScan, Patchstack) can't run without one;
 		// keyless providers (Wordfence) scan straight away.

@@ -202,6 +202,12 @@ class KDNA_Sentinel_Settings {
 			$clean['watch_provider']  = in_array( $provider, array( 'wpscan', 'patchstack', 'wordfence' ), true ) ? $provider : 'wpscan';
 		}
 
+		// Watch vulnerability-feed refresh interval (whitelisted hours).
+		if ( array_key_exists( 'watch_feed_refresh_hours', $input ) ) {
+			$hours                                = absint( $input['watch_feed_refresh_hours'] );
+			$clean['watch_feed_refresh_hours']    = in_array( $hours, array( 6, 12, 24 ), true ) ? $hours : 12;
+		}
+
 		// Watch API key: same masking rules as the Guard key.
 		if ( ! empty( $input['watch_api_key_remove'] ) ) {
 			$clean['watch_api_key'] = '';
