@@ -3,7 +3,7 @@ Contributors: krulldna
 Requires at least: 6.5
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.1.0
+Stable tag: 0.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,15 +51,22 @@ those tools by covering form spam and plugin patch-lag.
 
 == Changelog ==
 
+= 0.2.0 =
+* Guard: a country blocklist alongside the IP blocklist. Enter ISO 3166-1
+  alpha-2 codes (e.g. RU, CN, KP) on the Guard tab and submissions from those
+  countries are blocked outright, the same hard-fail tier as the IP blocklist.
+* The visitor country is resolved with no external API calls — from a
+  Cloudflare / CloudFront edge header when present, otherwise WooCommerce's
+  bundled geolocation database (local lookup only). When it cannot be
+  determined the check is skipped (fail-open), and the blocked country is
+  recorded on the audit log line.
+
 = 0.1.0 =
 First release. The complete plugin — Guard, Watch and the optional Hub.
 
 Guard (AI/bot form-spam defence):
 * Heuristics engine (PASS/BLOCK/BORDERLINE): honeypot, signed time-to-submit
-  threshold, interaction signal, a local IP blocklist, and a country blocklist
-  (ISO 3166-1 alpha-2 codes; visitor country resolved from a Cloudflare /
-  CloudFront header or WooCommerce's bundled geolocation database, and skipped
-  when it cannot be determined).
+  threshold, interaction signal, and local IP blocklist.
 * Bound to KDNA Forms via upstream interception and to WooCommerce account
   forms (registration, login, lost password, review, checkout) when WooCommerce
   is active. Fails open throughout.
@@ -73,9 +80,9 @@ Guard (AI/bot form-spam defence):
   path: KDNA Forms entries are un-flagged and re-notified), Delete, and Block
   this IP. All actions nonce-protected. Daily wp-cron purge of rows older than
   30 days.
-* Guard settings: honeypot on/off, timing threshold, IP blocklist, country
-  blocklist, API key (stored server-side, never echoed back in full), model
-  name, confidence threshold, and a per-day API call cap.
+* Guard settings: honeypot on/off, timing threshold, IP blocklist, API key
+  (stored server-side, never echoed back in full), model name, confidence
+  threshold, and a per-day API call cap.
 
 Watch (plugin patch-lag monitoring):
 * Scanner: reads installed plugins via get_plugins() and checks each against a
