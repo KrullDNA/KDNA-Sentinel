@@ -1,0 +1,47 @@
+/**
+ * KDNA Sentinel — admin styles.
+ * Loaded only on Sentinel admin screens.
+ */
+
+.kdna-sentinel-title {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.kdna-sentinel-title .dashicons-shield {
+	color: #1f3a5f;
+	font-size: 28px;
+	width: 28px;
+	height: 28px;
+}
+
+.kdna-sentinel-tagline {
+	max-width: 720px;
+	color: #50575e;
+	margin: 4px 0 16px;
+}
+
+.kdna-sentinel-tabs {
+	margin-bottom: 16px;
+}
+
+.kdna-sentinel-tab-content {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 16px 20px;
+	max-width: 900px;
+}
+
+.kdna-sentinel-toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-weight: 600;
+}
+
+.kdna-sentinel-panel h2,
+.kdna-sentinel-form h2 {
+	margin-top: 0;
+}
