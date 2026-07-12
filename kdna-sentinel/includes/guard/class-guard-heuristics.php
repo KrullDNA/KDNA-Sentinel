@@ -10,6 +10,7 @@
  *   Hard fails (definitive bot signals) -> BLOCK immediately:
  *     - honeypot hidden field filled
  *     - IP on the local blocklist
+ *     - submitter country on the local blocklist
  *     - submitted faster than the timing threshold
  *   Soft anomalies (suspicious but a genuine visitor could trip them) with no
  *   hard fail -> BORDERLINE (Stage 3 sends these to the API scorer):
@@ -51,16 +52,25 @@ class KDNA_Sentinel_Guard_Heuristics {
 	private $ip_blocklist;
 
 	/**
+	 * Normalised country blocklist (upper-case ISO 3166-1 alpha-2 codes).
+	 *
+	 * @var array
+	 */
+	private $country_blocklist;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param bool  $honeypot_enabled Honeypot check on/off.
-	 * @param int   $threshold        Timing threshold in seconds.
-	 * @param array $ip_blocklist     Array of blocked IP strings.
+	 * @param bool  $honeypot_enabled  Honeypot check on/off.
+	 * @param int   $threshold         Timing threshold in seconds.
+	 * @param array $ip_blocklist      Array of blocked IP strings.
+	 * @param array $country_blocklist Array of blocked ISO 3166-1 alpha-2 codes.
 	 */
-	public function __construct( $honeypot_enabled, $threshold, array $ip_blocklist ) {
-		$this->honeypot_enabled = (bool) $honeypot_enabled;
-		$this->threshold        = max( 0, (int) $threshold );
-		$this->ip_blocklist     = $ip_blocklist;
+	public function __construct( $honeypot_enabled, $threshold, array $ip_blocklist, array $country_blocklist = array() ) {
+		$this->honeypot_enabled  = (bool) $honeypot_enabled;
+		$this->threshold         = max( 0, (int) $threshold );
+		$this->ip_blocklist      = $ip_blocklist;
+		$this->country_blocklist = array_map( 'strtoupper', $country_blocklist );
 	}
 
 	/**
@@ -71,6 +81,7 @@ class KDNA_Sentinel_Guard_Heuristics {
 	 *     @type int|null $elapsed         Seconds between render and submit, or null if unknown/untrusted.
 	 *     @type bool     $has_interaction True when an interaction signal was present.
 	 *     @type string   $ip              Submitter IP.
+	 *     @type string   $country         Submitter country (ISO 3166-1 alpha-2), or '' if unknown.
 	 * }
 	 * @return KDNA_Sentinel_Guard_Verdict
 	 */
@@ -79,6 +90,7 @@ class KDNA_Sentinel_Guard_Heuristics {
 		$elapsed         = isset( $context['elapsed'] ) && null !== $context['elapsed'] ? (int) $context['elapsed'] : null;
 		$has_interaction = ! empty( $context['has_interaction'] );
 		$ip              = isset( $context['ip'] ) ? (string) $context['ip'] : '';
+		$country         = isset( $context['country'] ) ? strtoupper( (string) $context['country'] ) : '';
 
 		// --- Hard fails -> BLOCK ------------------------------------------
 		if ( $this->honeypot_enabled && $honeypot_filled ) {
@@ -92,6 +104,17 @@ class KDNA_Sentinel_Guard_Heuristics {
 			return KDNA_Sentinel_Guard_Verdict::block(
 				__( 'Submitter IP is on the local blocklist.', 'kdna-sentinel' ),
 				array( 'ip_blocklist' )
+			);
+		}
+
+		if ( '' !== $country && $this->is_country_blocked( $country ) ) {
+			return KDNA_Sentinel_Guard_Verdict::block(
+				sprintf(
+					/* translators: %s: two-letter ISO country code. */
+					__( 'Submitter country (%s) is on the blocklist.', 'kdna-sentinel' ),
+					$country
+				),
+				array( 'country_blocklist' )
 			);
 		}
 
@@ -140,6 +163,16 @@ class KDNA_Sentinel_Guard_Heuristics {
 	}
 
 	/**
+	 * Whether a country is on the blocklist (case-insensitive exact match).
+	 *
+	 * @param string $country Candidate ISO 3166-1 alpha-2 code.
+	 * @return bool
+	 */
+	private function is_country_blocked( $country ) {
+		return in_array( strtoupper( $country ), $this->country_blocklist, true );
+	}
+
+	/**
 	 * Parses a raw blocklist textarea into an array of valid IPs.
 	 *
 	 * @param string $raw Newline/comma separated IP list.
@@ -161,5 +194,32 @@ class KDNA_Sentinel_Guard_Heuristics {
 		}
 
 		return array_values( array_unique( $ips ) );
+	}
+
+	/**
+	 * Parses a raw blocklist textarea into an array of ISO 3166-1 alpha-2 codes.
+	 *
+	 * Entries are upper-cased and validated as two ASCII letters; anything else
+	 * (country names, three-letter codes, stray text) is dropped.
+	 *
+	 * @param string $raw Newline/comma separated country-code list.
+	 * @return array
+	 */
+	public static function parse_country_blocklist( $raw ) {
+		if ( ! is_string( $raw ) || '' === trim( $raw ) ) {
+			return array();
+		}
+
+		$parts     = preg_split( '/[\r\n,]+/', $raw );
+		$countries = array();
+
+		foreach ( $parts as $part ) {
+			$code = strtoupper( trim( $part ) );
+			if ( preg_match( '/^[A-Z]{2}$/', $code ) ) {
+				$countries[] = $code;
+			}
+		}
+
+		return array_values( array_unique( $countries ) );
 	}
 }

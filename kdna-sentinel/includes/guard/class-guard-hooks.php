@@ -128,6 +128,7 @@ class KDNA_Sentinel_Guard_Hooks {
 				'source'  => 'kdna_forms',
 				'form_id' => isset( $form['id'] ) ? (string) $form['id'] : '',
 				'ip'      => $context['ip'],
+				'country' => $context['country'],
 				'message' => $this->extract_kdna_message( $form, $entry ),
 				'payload' => is_array( $entry ) ? $entry : array(),
 			);
@@ -264,6 +265,7 @@ class KDNA_Sentinel_Guard_Hooks {
 				'source'  => $source,
 				'form_id' => '',
 				'ip'      => $context['ip'],
+				'country' => $context['country'],
 				'message' => (string) $message,
 				'payload' => $payload,
 			);
@@ -312,6 +314,7 @@ class KDNA_Sentinel_Guard_Hooks {
 				'source'  => 'woocommerce_review',
 				'form_id' => isset( $commentdata['comment_post_ID'] ) ? (string) $commentdata['comment_post_ID'] : '',
 				'ip'      => $context['ip'],
+				'country' => $context['country'],
 				'message' => $content,
 				'payload' => array(
 					'author'  => isset( $commentdata['comment_author'] ) ? $commentdata['comment_author'] : '',
@@ -473,6 +476,7 @@ class KDNA_Sentinel_Guard_Hooks {
 			'elapsed'         => $this->elapsed_seconds(),
 			'has_interaction' => $this->has_interaction(),
 			'ip'              => $this->get_ip(),
+			'country'         => $this->get_country(),
 		);
 	}
 
@@ -559,6 +563,41 @@ class KDNA_Sentinel_Guard_Hooks {
 	}
 
 	/**
+	 * Best-effort submitter country as an ISO 3166-1 alpha-2 code, or '' if it
+	 * cannot be determined. No external requests are made: an edge/CDN header is
+	 * used when present, otherwise WooCommerce's bundled MaxMind database (local
+	 * lookup only). Unknown resolves to '' so the country check simply fails open.
+	 *
+	 * @return string
+	 */
+	private function get_country() {
+		// 1. Edge/CDN headers set by the proxy (cheapest, most reliable).
+		foreach ( array( 'HTTP_CF_IPCOUNTRY', 'HTTP_CLOUDFRONT_VIEWER_COUNTRY', 'HTTP_X_COUNTRY_CODE' ) as $header ) {
+			if ( empty( $_SERVER[ $header ] ) ) {
+				continue;
+			}
+			$code = strtoupper( preg_replace( '/[^A-Za-z]/', '', (string) wp_unslash( $_SERVER[ $header ] ) ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			// Cloudflare sends "XX" for unknown; ignore it and keep looking.
+			if ( 2 === strlen( $code ) && 'XX' !== $code ) {
+				return $code;
+			}
+		}
+
+		// 2. WooCommerce's bundled geolocation database (local DB, no API fallback).
+		if ( class_exists( 'WC_Geolocation' ) ) {
+			$ip = $this->get_ip();
+			if ( '' !== $ip ) {
+				$geo = WC_Geolocation::geolocate_ip( $ip, false, false );
+				if ( is_array( $geo ) && ! empty( $geo['country'] ) ) {
+					return strtoupper( substr( (string) $geo['country'], 0, 2 ) );
+				}
+			}
+		}
+
+		return '';
+	}
+
+	/**
 	 * Signs a timestamp value.
 	 *
 	 * @param string $ts Timestamp (digits).
@@ -637,11 +676,12 @@ class KDNA_Sentinel_Guard_Hooks {
 	private function log_verdict( $level, KDNA_Sentinel_Guard_Verdict $verdict, array $meta, $force = true ) {
 		$this->log(
 			sprintf(
-				'%s source=%s form=%s ip=%s signals=%s reason=%s',
+				'%s source=%s form=%s ip=%s country=%s signals=%s reason=%s',
 				$level,
 				isset( $meta['source'] ) ? $meta['source'] : '',
 				isset( $meta['form_id'] ) ? $meta['form_id'] : '',
 				isset( $meta['ip'] ) ? $meta['ip'] : '',
+				isset( $meta['country'] ) ? $meta['country'] : '',
 				implode( ',', $verdict->signals() ),
 				$verdict->reason()
 			),

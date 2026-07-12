@@ -30,7 +30,7 @@ Each module can be switched on or off independently.
 This 0.1.0 release is the complete plugin, not a partial build:
 
 * **Guard** — heuristics engine (honeypot, signed time-to-submit, interaction
-  signal, IP blocklist) with a Claude API borderline scorer, a full quarantine
+  signal, IP blocklist, country blocklist) with a Claude API borderline scorer, a full quarantine
   with one-click "this was genuine" release, bound to KDNA Forms and (when
   active) WooCommerce account forms. Fails open throughout.
 * **Watch** — installed-plugin vulnerability scanner behind a swappable
@@ -56,7 +56,10 @@ First release. The complete plugin — Guard, Watch and the optional Hub.
 
 Guard (AI/bot form-spam defence):
 * Heuristics engine (PASS/BLOCK/BORDERLINE): honeypot, signed time-to-submit
-  threshold, interaction signal, and local IP blocklist.
+  threshold, interaction signal, a local IP blocklist, and a country blocklist
+  (ISO 3166-1 alpha-2 codes; visitor country resolved from a Cloudflare /
+  CloudFront header or WooCommerce's bundled geolocation database, and skipped
+  when it cannot be determined).
 * Bound to KDNA Forms via upstream interception and to WooCommerce account
   forms (registration, login, lost password, review, checkout) when WooCommerce
   is active. Fails open throughout.
@@ -70,9 +73,9 @@ Guard (AI/bot form-spam defence):
   path: KDNA Forms entries are un-flagged and re-notified), Delete, and Block
   this IP. All actions nonce-protected. Daily wp-cron purge of rows older than
   30 days.
-* Guard settings: honeypot on/off, timing threshold, IP blocklist, API key
-  (stored server-side, never echoed back in full), model name, confidence
-  threshold, and a per-day API call cap.
+* Guard settings: honeypot on/off, timing threshold, IP blocklist, country
+  blocklist, API key (stored server-side, never echoed back in full), model
+  name, confidence threshold, and a per-day API call cap.
 
 Watch (plugin patch-lag monitoring):
 * Scanner: reads installed plugins via get_plugins() and checks each against a
