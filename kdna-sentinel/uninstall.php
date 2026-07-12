@@ -32,6 +32,9 @@ delete_option( 'kdna_sentinel_watch_status' );
 delete_option( 'kdna_sentinel_watch_last_digest' );
 delete_option( 'kdna_sentinel_watch_alerted' );
 
+// Cached Wordfence vulnerability feed index.
+delete_transient( 'kdna_sentinel_wf_index_v1' );
+
 // Clear scheduled crons in case they are still scheduled.
 wp_clear_scheduled_hook( 'kdna_sentinel_guard_purge' );
 wp_clear_scheduled_hook( 'kdna_sentinel_watch_scan' );

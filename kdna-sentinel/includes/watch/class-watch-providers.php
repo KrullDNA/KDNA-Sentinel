@@ -359,8 +359,11 @@ class KDNA_Sentinel_Patchstack_Provider extends KDNA_Sentinel_Vuln_Provider_Base
  * lookup from that index — so the scanner interface is unchanged and only one
  * HTTP request is made per scan run (not one per installed plugin).
  *
- * Trade-off: that single request is a multi-megabyte download, so on very
- * constrained hosting WPScan/Patchstack (small per-slug requests) stay lighter.
+ * Trade-off: that single request is a multi-megabyte download. To keep it off
+ * constrained hosting, the processed (slim) slug index is cached in a transient
+ * so the download+decode runs at most a couple of times a day regardless of how
+ * often scans run; a cache hit skips the fetch and the JSON decode entirely.
+ * WPScan/Patchstack (small per-slug requests) remain the lightest option.
  * An API key is optional: unauthenticated access works; a key raises limits.
  *
  * @link https://www.wordfence.com/help/wordfence-intelligence/wordfence-intelligence-vulnerability-data-api/
@@ -368,6 +371,12 @@ class KDNA_Sentinel_Patchstack_Provider extends KDNA_Sentinel_Vuln_Provider_Base
 class KDNA_Sentinel_Wordfence_Provider extends KDNA_Sentinel_Vuln_Provider_Base {
 
 	const ENDPOINT = 'https://www.wordfence.com/api/intelligence/v2/vulnerabilities/production';
+
+	/**
+	 * Transient key for the cached slug index. Versioned so a change to the
+	 * cached shape never reads a stale layout.
+	 */
+	const CACHE_KEY = 'kdna_sentinel_wf_index_v1';
 
 	/**
 	 * The whole feed is a large download; give it room.
@@ -438,11 +447,28 @@ class KDNA_Sentinel_Wordfence_Provider extends KDNA_Sentinel_Vuln_Provider_Base 
 	}
 
 	/**
-	 * Downloads the feed once and indexes plugin vulnerabilities by slug.
+	 * Loads the slug index, preferring a cached copy over downloading the feed.
 	 *
 	 * @return void
 	 */
 	private function load_index() {
+		$cached = get_transient( self::CACHE_KEY );
+		if ( is_array( $cached ) ) {
+			$this->index        = $cached;
+			$this->fetch_status = 'ok';
+			return;
+		}
+
+		$this->fetch_index();
+	}
+
+	/**
+	 * Downloads the feed once, indexes plugin vulnerabilities by slug, and
+	 * caches the processed index for next time.
+	 *
+	 * @return void
+	 */
+	private function fetch_index() {
 		$this->index = array();
 
 		$headers = array( 'Accept' => 'application/json' );
@@ -517,6 +543,24 @@ class KDNA_Sentinel_Wordfence_Provider extends KDNA_Sentinel_Vuln_Provider_Base 
 		}
 
 		$this->fetch_status = 'ok';
+
+		// Cache the slim, processed index so later scans skip the download+decode.
+		set_transient( self::CACHE_KEY, $this->index, $this->cache_ttl() );
+	}
+
+	/**
+	 * How long the cached index stays fresh, in seconds. Filterable so a site
+	 * can trade freshness for fewer downloads (or the reverse).
+	 *
+	 * @return int
+	 */
+	private function cache_ttl() {
+		/**
+		 * Filters the Wordfence feed cache lifetime (seconds). Default 12 hours.
+		 *
+		 * @param int $ttl Cache lifetime in seconds.
+		 */
+		return max( 0, (int) apply_filters( 'kdna_sentinel_watch_wordfence_cache_ttl', 12 * HOUR_IN_SECONDS ) );
 	}
 
 	/**

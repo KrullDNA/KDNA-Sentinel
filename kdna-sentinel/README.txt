@@ -3,7 +3,7 @@ Contributors: krulldna
 Requires at least: 6.5
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.3.0
+Stable tag: 0.3.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,14 @@ No. Sentinel is not an edge firewall and does not block traffic. It complements
 those tools by covering form spam and plugin patch-lag.
 
 == Changelog ==
+
+= 0.3.1 =
+* Watch: the Wordfence Intelligence feed is now cached (processed slug index)
+  in a transient for 12 hours, so the multi-megabyte download and JSON decode
+  run at most a couple of times a day instead of on every scan — much lighter
+  on constrained hosting. The lifetime is filterable via
+  kdna_sentinel_watch_wordfence_cache_ttl, and a failed fetch never poisons the
+  cache. The cache is cleared on uninstall.
 
 = 0.3.0 =
 * Watch: added Wordfence Intelligence as a third vulnerability provider,
