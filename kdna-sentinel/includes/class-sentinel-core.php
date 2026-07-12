@@ -68,12 +68,6 @@ final class KDNA_Sentinel_Core {
 		// Apply any pending schema upgrade in the admin.
 		add_action( 'admin_init', array( 'KDNA_Sentinel_Activator', 'maybe_upgrade' ) );
 
-		// Guard quarantine: store, release, admin row actions and daily purge.
-		// Registered regardless of the Guard toggle so held items stay
-		// manageable and the purge keeps running even if Guard is switched off.
-		require_once KDNA_SENTINEL_DIR . 'includes/guard/class-guard-quarantine.php';
-		KDNA_Sentinel_Guard_Quarantine::instance()->register();
-
 		// Settings UI (admin only).
 		if ( is_admin() ) {
 			require_once KDNA_SENTINEL_DIR . 'includes/class-sentinel-settings.php';
@@ -140,37 +134,8 @@ final class KDNA_Sentinel_Core {
 	 */
 	public static function default_settings() {
 		return array(
-			// Master toggles.
-			'guard_enabled'          => 0,
-			'watch_enabled'          => 0,
-
-			// Guard heuristics.
-			'guard_honeypot_enabled'      => 1,
-			'guard_timing_threshold'      => 2,
-			'guard_ip_blocklist'          => '',
-
-			// Guard API scorer (Stage 3).
-			'guard_api_key'               => '',
-			'guard_model'                 => 'claude-haiku-4-5',
-			'guard_confidence_threshold'  => 0.5,
-			'guard_daily_cap'             => 100,
-
-			// Watch scanner (Stage 5).
-			'watch_provider'              => 'wpscan',
-			'watch_api_key'               => '',
-
-			// Watch alerts (Stage 6).
-			'watch_digest_recipients'     => '',
-			'watch_critical_recipients'   => '',
-			'watch_digest_frequency'      => 'weekly',
-			'watch_digest_skip_if_clean'  => 1,
-			'watch_instant_alerts'        => 1,
-
-			// Hub (Stage 7) — off by default.
-			'hub_report_enabled'          => 0,
-			'hub_url'                     => '',
-			'hub_secret'                  => '',
-			'hub_is_hub'                  => 0,
+			'guard_enabled' => 0,
+			'watch_enabled' => 0,
 		);
 	}
 

@@ -31,17 +31,9 @@ This is an in-progress build delivered in stages.
 
 * Stage 0 — Repo archaeology & interception strategy: complete.
 * Stage 1 — Plugin skeleton, settings, module toggles, custom tables: complete.
-* Stage 2 — Guard heuristics engine + form bindings: complete.
-* Stage 3 — Guard Claude API borderline scorer: complete.
-* Stage 4 — Guard quarantine + one-click release: complete.
-* Stage 5 — Watch scanner + local dashboard: complete.
-* Stage 6 — Watch email digest + instant critical alert: complete.
-* Stage 7 — Hub optional report-in + master dashboard: complete.
 
-All stages complete. Guard defends KDNA Forms and WooCommerce account forms;
-Watch monitors plugin patch-lag with alerts; the optional Hub lets client sites
-report signed scan summaries to a central KDNA dashboard. Both modules toggle
-independently; the Hub is off by default.
+No detection or scanning logic is present yet; the Guard and Watch toggles
+persist but do nothing until later stages.
 
 == Frequently Asked Questions ==
 
@@ -51,62 +43,6 @@ No. Sentinel is not an edge firewall and does not block traffic. It complements
 those tools by covering form spam and plugin patch-lag.
 
 == Changelog ==
-
-= 0.7.0 =
-* Hub (off by default): client sites can POST a compact, HMAC-signed scan
-  summary (site URL, plugin risk list, worst severity, timestamp — metadata
-  only, never content or PII) to a nominated hub after each scan.
-* Hub receiver: a REST route (/kdna-sentinel/v1/report) active only when "This
-  site is the KDNA hub" is on; verifies the HMAC against the shared secret,
-  rejects unsigned/invalid, and stores accepted reports.
-* Hub dashboard: every reporting site in one table — site, worst severity,
-  at-risk count, longest patch lag, last check-in — red-flagging any site with a
-  critical vulnerability or a stale check-in.
-
-= 0.6.0 =
-* Watch alerts: configurable daily/weekly digest of at-risk plugins (with an
-  optional skip-when-clean), and an immediate URGENT email the moment a scan
-  newly detects a critical vulnerability, de-duplicated so the same CVE does not
-  re-alert every scan.
-* Two separate comma-separated recipient lists (digest / critical), each
-  defaulting to the WordPress admin email; malformed addresses are ignored.
-* All mail via wp_mail as HTML with a plain-text fallback.
-
-= 0.5.0 =
-* Watch scanner: reads installed plugins via get_plugins() and checks each
-  against a swappable vulnerability provider (WPScan or Patchstack) behind one
-  interface. At-risk findings are cached (per-plugin, so a mid-scan rate limit
-  keeps partial results); daily wp-cron + a manual "Scan now" button drive it;
-  429 responses back off and pause the run.
-* Watch dashboard: worst-first table of at-risk plugins (plugin, installed
-  version, severity, fixed-in, patch lag, update link), or a clear
-  "All plugins current" message.
-* Schema v2: adds fixed_at to the vuln cache to compute patch lag (auto-upgraded
-  on existing installs).
-
-= 0.4.0 =
-* Guard quarantine: every blocked/spam submission is stored (source, form,
-  reason, score, IP, full payload). Admin list under the Guard tab with Preview
-  and row actions — one-click "This was genuine — let it through" (re-runs the
-  genuine path: KDNA Forms entries are un-flagged and re-notified), Delete, and
-  Block this IP. All actions nonce-protected.
-* Daily wp-cron purge of quarantine rows older than 30 days.
-
-= 0.3.0 =
-* Guard Claude API borderline scorer: only borderline submissions are sent to a
-  Haiku-class model (message body only, never full PII), classified SPAM/HAM
-  with a confidence, and quarantined below a configurable HAM confidence
-  threshold. Strict fail-open on any API error, timeout or unparseable reply.
-* Guard settings: API key (stored server-side, never echoed back in full),
-  model name, confidence threshold, and a per-day API call cap.
-
-= 0.2.0 =
-* Guard heuristics engine (PASS/BLOCK/BORDERLINE): honeypot, signed time-to-
-  submit threshold, interaction signal, and local IP blocklist.
-* Guard bound to KDNA Forms via upstream interception and to WooCommerce
-  account forms (registration, login, lost password, review, checkout) when
-  WooCommerce is active. Fail-open throughout.
-* Guard settings: honeypot on/off, timing threshold, IP blocklist.
 
 = 0.1.0 =
 * Initial skeleton: top-level admin menu with Guard, Watch and Hub tabs, master

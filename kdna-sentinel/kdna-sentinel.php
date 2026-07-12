@@ -3,7 +3,7 @@
  * Plugin Name:       KDNA Sentinel
  * Plugin URI:        https://krulldna.com/kdna-sentinel
  * Description:       Two-module security plugin for small-agency WordPress sites: Guard (AI/bot form-spam defence) and Watch (plugin patch-lag monitoring). Each module toggles independently.
- * Version:           0.7.0
+ * Version:           0.1.0
  * Requires at least: 6.5
  * Requires PHP:      7.4
  * Author:            Krull Design & Advertising
@@ -26,10 +26,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Constants
  * -------------------------------------------------------------------------
  */
-define( 'KDNA_SENTINEL_VERSION', '0.7.0' );
+define( 'KDNA_SENTINEL_VERSION', '0.1.0' );
 
 // Bump when the custom table schema changes so upgrades re-run dbDelta.
-define( 'KDNA_SENTINEL_DB_VERSION', '2' );
+define( 'KDNA_SENTINEL_DB_VERSION', '1' );
 
 define( 'KDNA_SENTINEL_FILE', __FILE__ );
 define( 'KDNA_SENTINEL_DIR', plugin_dir_path( __FILE__ ) );
