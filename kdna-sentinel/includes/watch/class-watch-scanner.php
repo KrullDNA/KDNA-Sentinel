@@ -76,12 +76,14 @@ class KDNA_Sentinel_Watch_Scanner {
 	 * @return array The status recorded.
 	 */
 	public function scan() {
-		if ( '' === trim( $this->api_key ) ) {
-			return $this->record_status( 'no_key', __( 'No vulnerability API key set.', 'kdna-sentinel' ), 0, 0 );
-		}
-
 		require_once KDNA_SENTINEL_DIR . 'includes/watch/class-watch-providers.php';
 		$provider = KDNA_Sentinel_Watch_Providers::make( $this->provider_slug, $this->api_key );
+
+		// Key-requiring providers (WPScan, Patchstack) can't run without one;
+		// keyless providers (Wordfence) scan straight away.
+		if ( $provider->requires_key() && '' === trim( $this->api_key ) ) {
+			return $this->record_status( 'no_key', __( 'No vulnerability API key set.', 'kdna-sentinel' ), 0, 0 );
+		}
 
 		$plugins  = $this->installed_plugins();
 		$scanned  = 0;

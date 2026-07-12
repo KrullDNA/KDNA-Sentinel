@@ -3,7 +3,7 @@ Contributors: krulldna
 Requires at least: 6.5
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.2.0
+Stable tag: 0.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -34,8 +34,9 @@ This 0.1.0 release is the complete plugin, not a partial build:
   with one-click "this was genuine" release, bound to KDNA Forms and (when
   active) WooCommerce account forms. Fails open throughout.
 * **Watch** — installed-plugin vulnerability scanner behind a swappable
-  provider (WPScan or Patchstack), a worst-first local dashboard, configurable
-  daily/weekly digests and instant critical-vulnerability alerts.
+  provider (WPScan, Patchstack, or the free no-key Wordfence Intelligence
+  feed), a worst-first local dashboard, configurable daily/weekly digests and
+  instant critical-vulnerability alerts.
 * **Hub** (off by default) — client sites can report a compact, HMAC-signed
   scan summary to a nominated KDNA hub site, which aggregates every site into
   one master dashboard.
@@ -50,6 +51,15 @@ No. Sentinel is not an edge firewall and does not block traffic. It complements
 those tools by covering form spam and plugin patch-lag.
 
 == Changelog ==
+
+= 0.3.0 =
+* Watch: added Wordfence Intelligence as a third vulnerability provider,
+  alongside WPScan and Patchstack. Its vulnerability feed is free and open, so
+  this provider needs no API key (an optional key only raises rate limits).
+* The provider downloads the feed once per scan and indexes it by plugin slug
+  in memory, so only one request is made per scan regardless of how many
+  plugins are installed; 429s back off and errors leave existing results in
+  place, the same as the other providers.
 
 = 0.2.0 =
 * Guard: a country blocklist alongside the IP blocklist. Enter ISO 3166-1

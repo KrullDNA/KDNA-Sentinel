@@ -74,7 +74,7 @@ if ( isset( $watch_notices[ $kdna_notice ] ) ) {
 						<option value="<?php echo esc_attr( $slug ); ?>" <?php selected( $provider, $slug ); ?>><?php echo esc_html( $label ); ?></option>
 					<?php endforeach; ?>
 				</select>
-				<p class="description"><?php esc_html_e( 'Which vulnerability database to query. Both take an API key below.', 'kdna-sentinel' ); ?></p>
+				<p class="description"><?php esc_html_e( 'Which vulnerability database to query. WPScan and Patchstack need an API key below; Wordfence Intelligence is free and needs no key.', 'kdna-sentinel' ); ?></p>
 			</td>
 		</tr>
 
@@ -89,7 +89,7 @@ if ( isset( $watch_notices[ $kdna_notice ] ) ) {
 						/* translators: %s: last four characters of the stored API key. */
 						printf( esc_html__( 'A key is stored (ending %s). Leave blank to keep it.', 'kdna-sentinel' ), '<code>&bull;&bull;&bull;&bull;' . esc_html( $api_key_last4 ) . '</code>' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 					} else {
-						esc_html_e( 'Enter your provider API key. Without a key, no scan runs.', 'kdna-sentinel' );
+						esc_html_e( 'Required for WPScan and Patchstack — without a key those providers cannot scan. Optional for Wordfence Intelligence (a key only raises its rate limits).', 'kdna-sentinel' );
 					}
 					?>
 				</p>

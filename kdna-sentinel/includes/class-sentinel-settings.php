@@ -199,7 +199,7 @@ class KDNA_Sentinel_Settings {
 		// Watch provider (whitelisted).
 		if ( array_key_exists( 'watch_provider', $input ) ) {
 			$provider                 = sanitize_key( wp_unslash( $input['watch_provider'] ) );
-			$clean['watch_provider']  = in_array( $provider, array( 'wpscan', 'patchstack' ), true ) ? $provider : 'wpscan';
+			$clean['watch_provider']  = in_array( $provider, array( 'wpscan', 'patchstack', 'wordfence' ), true ) ? $provider : 'wpscan';
 		}
 
 		// Watch API key: same masking rules as the Guard key.

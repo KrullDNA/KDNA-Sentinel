@@ -2,9 +2,9 @@
 /**
  * Vulnerability-data providers for Watch.
  *
- * One interface, swappable implementations (WPScan, Patchstack), selected in
- * the Watch tab. Each provider looks up a plugin slug and returns a normalised
- * result so the scanner is provider-agnostic.
+ * One interface, swappable implementations (WPScan, Patchstack, Wordfence),
+ * selected in the Watch tab. Each provider looks up a plugin slug and returns a
+ * normalised result so the scanner is provider-agnostic.
  *
  * @package KDNA_Sentinel
  */
@@ -37,6 +37,13 @@ interface KDNA_Sentinel_Vuln_Provider {
 	 * @return string
 	 */
 	public function slug();
+
+	/**
+	 * Whether this provider needs an API key to function.
+	 *
+	 * @return bool
+	 */
+	public function requires_key();
 }
 
 /**
@@ -65,6 +72,15 @@ abstract class KDNA_Sentinel_Vuln_Provider_Base implements KDNA_Sentinel_Vuln_Pr
 	 */
 	public function __construct( $api_key ) {
 		$this->api_key = (string) $api_key;
+	}
+
+	/**
+	 * Providers require an API key unless they override this.
+	 *
+	 * @return bool
+	 */
+	public function requires_key() {
+		return true;
 	}
 
 	/**
@@ -335,6 +351,233 @@ class KDNA_Sentinel_Patchstack_Provider extends KDNA_Sentinel_Vuln_Provider_Base
 }
 
 /**
+ * Wordfence Intelligence provider (free, no key required).
+ *
+ * Unlike the per-slug WPScan/Patchstack APIs, Wordfence publishes one open feed
+ * of the whole production vulnerability dataset. This provider downloads it once
+ * per scan, indexes it by plugin slug in memory, and answers each per-slug
+ * lookup from that index — so the scanner interface is unchanged and only one
+ * HTTP request is made per scan run (not one per installed plugin).
+ *
+ * Trade-off: that single request is a multi-megabyte download, so on very
+ * constrained hosting WPScan/Patchstack (small per-slug requests) stay lighter.
+ * An API key is optional: unauthenticated access works; a key raises limits.
+ *
+ * @link https://www.wordfence.com/help/wordfence-intelligence/wordfence-intelligence-vulnerability-data-api/
+ */
+class KDNA_Sentinel_Wordfence_Provider extends KDNA_Sentinel_Vuln_Provider_Base {
+
+	const ENDPOINT = 'https://www.wordfence.com/api/intelligence/v2/vulnerabilities/production';
+
+	/**
+	 * The whole feed is a large download; give it room.
+	 *
+	 * @var int
+	 */
+	protected $timeout = 30;
+
+	/**
+	 * slug => array of normalised vuln records, built on first lookup.
+	 *
+	 * @var array|null
+	 */
+	private $index = null;
+
+	/**
+	 * Outcome of the one-time feed fetch: ''|ok|error|rate_limited.
+	 *
+	 * @var string
+	 */
+	private $fetch_status = '';
+
+	/**
+	 * Seconds to back off (rate_limited only).
+	 *
+	 * @var int
+	 */
+	private $retry_secs = 60;
+
+	/**
+	 * @return string
+	 */
+	public function slug() {
+		return 'wordfence';
+	}
+
+	/**
+	 * The feed is open; no key needed.
+	 *
+	 * @return bool
+	 */
+	public function requires_key() {
+		return false;
+	}
+
+	/**
+	 * @param string $slug Plugin slug.
+	 * @return array
+	 */
+	public function get_plugin_vulnerabilities( $slug ) {
+		if ( null === $this->index ) {
+			$this->load_index();
+		}
+
+		if ( 'ok' !== $this->fetch_status ) {
+			$out = array( 'status' => $this->fetch_status, 'vulns' => array() );
+			if ( 'rate_limited' === $this->fetch_status ) {
+				$out['retry_after'] = $this->retry_secs;
+			}
+			return $out;
+		}
+
+		if ( isset( $this->index[ $slug ] ) ) {
+			return array( 'status' => 'ok', 'vulns' => $this->index[ $slug ] );
+		}
+
+		return array( 'status' => 'not_found', 'vulns' => array() );
+	}
+
+	/**
+	 * Downloads the feed once and indexes plugin vulnerabilities by slug.
+	 *
+	 * @return void
+	 */
+	private function load_index() {
+		$this->index = array();
+
+		$headers = array( 'Accept' => 'application/json' );
+		if ( '' !== trim( $this->api_key ) ) {
+			$headers['Authorization'] = 'Bearer ' . $this->api_key;
+		}
+
+		$response = wp_remote_get(
+			self::ENDPOINT,
+			array(
+				'timeout' => $this->timeout,
+				'headers' => $headers,
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			$this->fetch_status = 'error';
+			return;
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		if ( 429 === $code ) {
+			$this->fetch_status = 'rate_limited';
+			$this->retry_secs   = $this->retry_after( $response );
+			return;
+		}
+		if ( 200 !== $code ) {
+			$this->fetch_status = 'error';
+			return;
+		}
+
+		$data = json_decode( wp_remote_retrieve_body( $response ), true );
+		if ( ! is_array( $data ) ) {
+			$this->fetch_status = 'error';
+			return;
+		}
+
+		foreach ( $data as $record ) {
+			if ( ! is_array( $record ) || empty( $record['software'] ) || ! is_array( $record['software'] ) ) {
+				continue;
+			}
+
+			$vuln_id  = isset( $record['id'] ) ? (string) $record['id'] : '';
+			$title    = isset( $record['title'] ) ? (string) $record['title'] : '';
+			$severity = $this->wf_severity( $record );
+
+			$date = '';
+			foreach ( array( 'published', 'updated', 'created' ) as $k ) {
+				if ( ! empty( $record[ $k ] ) ) {
+					$date = $record[ $k ];
+					break;
+				}
+			}
+
+			foreach ( $record['software'] as $sw ) {
+				if ( ! is_array( $sw ) || 'plugin' !== ( isset( $sw['type'] ) ? $sw['type'] : '' ) ) {
+					continue;
+				}
+				$sw_slug = isset( $sw['slug'] ) ? (string) $sw['slug'] : '';
+				if ( '' === $sw_slug ) {
+					continue;
+				}
+
+				$this->index[ $sw_slug ][] = array(
+					'vuln_id'  => '' !== $vuln_id ? $vuln_id : md5( wp_json_encode( $record ) ),
+					'title'    => $title,
+					'severity' => $severity,
+					'fixed_in' => $this->wf_fixed_in( $sw ),
+					'fixed_at' => $this->normalize_date( $date ),
+				);
+			}
+		}
+
+		$this->fetch_status = 'ok';
+	}
+
+	/**
+	 * Maps a Wordfence record's CVSS block to a severity band.
+	 *
+	 * @param array $record Vulnerability record.
+	 * @return string
+	 */
+	private function wf_severity( $record ) {
+		if ( isset( $record['cvss'] ) && is_array( $record['cvss'] ) ) {
+			if ( ! empty( $record['cvss']['rating'] ) ) {
+				return $this->normalize_severity( $record['cvss']['rating'] );
+			}
+			if ( isset( $record['cvss']['score'] ) ) {
+				return $this->severity_from_score( $record['cvss']['score'] );
+			}
+		}
+
+		return 'unknown';
+	}
+
+	/**
+	 * Best-effort "fixed in" version for a software entry.
+	 *
+	 * Prefers an explicit patched version; otherwise treats the exclusive upper
+	 * bound of an affected-version range ("affected up to but not including X")
+	 * as the fix. Returns '' when no fix is known.
+	 *
+	 * @param array $sw Software entry.
+	 * @return string
+	 */
+	private function wf_fixed_in( $sw ) {
+		if ( ! empty( $sw['patched_versions'] ) && is_array( $sw['patched_versions'] ) ) {
+			$versions = array_values( array_filter( array_map( 'strval', $sw['patched_versions'] ) ) );
+			if ( ! empty( $versions ) ) {
+				usort( $versions, 'version_compare' );
+				return (string) $versions[0];
+			}
+		}
+
+		if ( ! empty( $sw['affected_versions'] ) && is_array( $sw['affected_versions'] ) ) {
+			$fix = '';
+			foreach ( $sw['affected_versions'] as $range ) {
+				if ( ! is_array( $range ) ) {
+					continue;
+				}
+				$to = isset( $range['to_version'] ) ? (string) $range['to_version'] : '';
+				if ( '' !== $to && '*' !== $to && empty( $range['to_inclusive'] ) ) {
+					if ( '' === $fix || version_compare( $to, $fix, '>' ) ) {
+						$fix = $to;
+					}
+				}
+			}
+			return $fix;
+		}
+
+		return '';
+	}
+}
+
+/**
  * Provider factory.
  */
 class KDNA_Sentinel_Watch_Providers {
@@ -350,6 +593,9 @@ class KDNA_Sentinel_Watch_Providers {
 		if ( 'patchstack' === $provider ) {
 			return new KDNA_Sentinel_Patchstack_Provider( $api_key );
 		}
+		if ( 'wordfence' === $provider ) {
+			return new KDNA_Sentinel_Wordfence_Provider( $api_key );
+		}
 
 		return new KDNA_Sentinel_WPScan_Provider( $api_key );
 	}
@@ -363,6 +609,16 @@ class KDNA_Sentinel_Watch_Providers {
 		return array(
 			'wpscan'     => __( 'WPScan', 'kdna-sentinel' ),
 			'patchstack' => __( 'Patchstack', 'kdna-sentinel' ),
+			'wordfence'  => __( 'Wordfence Intelligence (free, no key)', 'kdna-sentinel' ),
 		);
+	}
+
+	/**
+	 * Provider slugs that do not require an API key.
+	 *
+	 * @return array
+	 */
+	public static function keyless() {
+		return array( 'wordfence' );
 	}
 }
