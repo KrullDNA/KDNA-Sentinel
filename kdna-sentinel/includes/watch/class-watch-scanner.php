@@ -111,10 +111,21 @@ class KDNA_Sentinel_Watch_Scanner {
 		$at_risk = $this->count_at_risk();
 
 		if ( $rate_hit ) {
-			return $this->record_status( 'rate_limited', __( 'Rate limited by the API; scan paused. Partial results saved.', 'kdna-sentinel' ), $at_risk, $scanned );
+			$status = $this->record_status( 'rate_limited', __( 'Rate limited by the API; scan paused. Partial results saved.', 'kdna-sentinel' ), $at_risk, $scanned );
+		} else {
+			$status = $this->record_status( 'ok', __( 'Scan complete.', 'kdna-sentinel' ), $at_risk, $scanned );
 		}
 
-		return $this->record_status( 'ok', __( 'Scan complete.', 'kdna-sentinel' ), $at_risk, $scanned );
+		/**
+		 * Fires after a scan completes (cron or manual). The alerts layer hooks
+		 * this to send instant critical alerts on newly-detected CVEs.
+		 *
+		 * @param KDNA_Sentinel_Watch_Scanner $scanner The scanner.
+		 * @param array                       $status  The recorded status.
+		 */
+		do_action( 'kdna_sentinel_watch_scan_complete', $this, $status );
+
+		return $status;
 	}
 
 	/**

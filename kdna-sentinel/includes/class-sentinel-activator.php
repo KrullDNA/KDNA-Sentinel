@@ -39,6 +39,9 @@ class KDNA_Sentinel_Activator {
 		if ( ! wp_next_scheduled( 'kdna_sentinel_watch_scan' ) ) {
 			wp_schedule_event( time(), 'daily', 'kdna_sentinel_watch_scan' );
 		}
+		if ( ! wp_next_scheduled( 'kdna_sentinel_watch_digest' ) ) {
+			wp_schedule_event( time(), 'daily', 'kdna_sentinel_watch_digest' );
+		}
 	}
 
 	/**
@@ -52,6 +55,7 @@ class KDNA_Sentinel_Activator {
 	public static function deactivate() {
 		wp_clear_scheduled_hook( 'kdna_sentinel_guard_purge' );
 		wp_clear_scheduled_hook( 'kdna_sentinel_watch_scan' );
+		wp_clear_scheduled_hook( 'kdna_sentinel_watch_digest' );
 	}
 
 	/**

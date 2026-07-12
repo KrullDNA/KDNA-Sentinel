@@ -43,6 +43,13 @@ final class KDNA_Sentinel_Watch {
 	private $scanner;
 
 	/**
+	 * The alerts controller.
+	 *
+	 * @var KDNA_Sentinel_Watch_Alerts
+	 */
+	private $alerts;
+
+	/**
 	 * @return KDNA_Sentinel_Watch
 	 */
 	public static function instance() {
@@ -79,6 +86,11 @@ final class KDNA_Sentinel_Watch {
 		if ( is_admin() ) {
 			add_action( 'admin_post_' . self::SCAN_ACTION, array( $this, 'handle_manual_scan' ) );
 		}
+
+		// Alerts: digest + instant critical.
+		require_once KDNA_SENTINEL_DIR . 'includes/watch/class-watch-alerts.php';
+		$this->alerts = new KDNA_Sentinel_Watch_Alerts( $core, $this->scanner );
+		$this->alerts->register();
 	}
 
 	/**

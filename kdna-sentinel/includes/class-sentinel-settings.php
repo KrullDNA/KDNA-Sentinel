@@ -142,8 +142,8 @@ class KDNA_Sentinel_Settings {
 
 		$clean = array();
 
-		// Boolean flags (master toggles + Guard honeypot).
-		foreach ( array( 'guard_enabled', 'watch_enabled', 'guard_honeypot_enabled' ) as $flag ) {
+		// Boolean flags (master toggles + Guard honeypot + Watch alert flags).
+		foreach ( array( 'guard_enabled', 'watch_enabled', 'guard_honeypot_enabled', 'watch_digest_skip_if_clean', 'watch_instant_alerts' ) as $flag ) {
 			if ( array_key_exists( $flag, $input ) ) {
 				$clean[ $flag ] = empty( $input[ $flag ] ) ? 0 : 1;
 			}
@@ -205,6 +205,19 @@ class KDNA_Sentinel_Settings {
 			}
 		}
 
+		// Watch digest frequency (whitelisted).
+		if ( array_key_exists( 'watch_digest_frequency', $input ) ) {
+			$freq                            = sanitize_key( wp_unslash( $input['watch_digest_frequency'] ) );
+			$clean['watch_digest_frequency'] = ( 'daily' === $freq ) ? 'daily' : 'weekly';
+		}
+
+		// Watch recipient lists: keep only valid emails, one per line stored.
+		foreach ( array( 'watch_digest_recipients', 'watch_critical_recipients' ) as $field ) {
+			if ( array_key_exists( $field, $input ) ) {
+				$clean[ $field ] = $this->sanitize_email_list( (string) wp_unslash( $input[ $field ] ) );
+			}
+		}
+
 		$merged = array_merge( $existing, $clean );
 
 		// Keep the in-memory copy in sync with what was just saved.
@@ -218,6 +231,25 @@ class KDNA_Sentinel_Settings {
 		);
 
 		return $merged;
+	}
+
+	/**
+	 * Reduces a comma/newline list to valid, de-duplicated emails.
+	 * Malformed entries are dropped rather than failing the save.
+	 *
+	 * @param string $raw Raw list.
+	 * @return string Comma-separated valid emails.
+	 */
+	private function sanitize_email_list( $raw ) {
+		$out = array();
+		foreach ( preg_split( '/[,\r\n]+/', $raw ) as $email ) {
+			$email = trim( $email );
+			if ( '' !== $email && is_email( $email ) ) {
+				$out[] = $email;
+			}
+		}
+
+		return implode( ', ', array_values( array_unique( $out ) ) );
 	}
 
 	/**

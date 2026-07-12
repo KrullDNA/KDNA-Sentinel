@@ -22,6 +22,13 @@ $api_key_set   = ( '' !== $api_key );
 $api_key_last4 = $api_key_set ? substr( $api_key, -4 ) : '';
 $option        = KDNA_Sentinel_Core::OPTION;
 
+$digest_to     = isset( $settings['watch_digest_recipients'] ) ? (string) $settings['watch_digest_recipients'] : '';
+$critical_to   = isset( $settings['watch_critical_recipients'] ) ? (string) $settings['watch_critical_recipients'] : '';
+$frequency     = isset( $settings['watch_digest_frequency'] ) ? (string) $settings['watch_digest_frequency'] : 'weekly';
+$skip_if_clean = ! empty( $settings['watch_digest_skip_if_clean'] );
+$instant_on    = ! empty( $settings['watch_instant_alerts'] );
+$admin_email   = get_option( 'admin_email' );
+
 // Action-result notice (manual scan).
 $kdna_notice  = isset( $_GET['kdna_notice'] ) ? sanitize_key( wp_unslash( $_GET['kdna_notice'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 $watch_notices = array(
@@ -92,6 +99,74 @@ if ( isset( $watch_notices[ $kdna_notice ] ) ) {
 						<?php esc_html_e( 'Remove the stored API key', 'kdna-sentinel' ); ?>
 					</label>
 				<?php endif; ?>
+			</td>
+		</tr>
+	</table>
+
+	<h2><?php esc_html_e( 'Alerts', 'kdna-sentinel' ); ?></h2>
+	<p class="description">
+		<?php esc_html_e( 'The weekly/daily digest is a value touchpoint for the site owner; URGENT critical alerts should go to whoever actually patches the site. Give each its own recipients.', 'kdna-sentinel' ); ?>
+	</p>
+
+	<table class="form-table" role="presentation">
+		<tr>
+			<th scope="row"><label for="kdna-sentinel-digest-to"><?php esc_html_e( 'Digest recipients', 'kdna-sentinel' ); ?></label></th>
+			<td>
+				<input type="text" id="kdna-sentinel-digest-to" class="large-text"
+					name="<?php echo esc_attr( $option ); ?>[watch_digest_recipients]"
+					value="<?php echo esc_attr( $digest_to ); ?>"
+					placeholder="<?php echo esc_attr( $admin_email ); ?>" />
+				<p class="description">
+					<?php
+					/* translators: %s: WordPress admin email. */
+					printf( esc_html__( 'Comma-separated addresses for the summary digest. Leave blank to use the WordPress admin email (%s). Invalid entries are dropped on save.', 'kdna-sentinel' ), esc_html( $admin_email ) );
+					?>
+				</p>
+			</td>
+		</tr>
+
+		<tr>
+			<th scope="row"><label for="kdna-sentinel-critical-to"><?php esc_html_e( 'Critical alert recipients', 'kdna-sentinel' ); ?></label></th>
+			<td>
+				<input type="text" id="kdna-sentinel-critical-to" class="large-text"
+					name="<?php echo esc_attr( $option ); ?>[watch_critical_recipients]"
+					value="<?php echo esc_attr( $critical_to ); ?>"
+					placeholder="<?php echo esc_attr( $admin_email ); ?>" />
+				<p class="description">
+					<?php esc_html_e( 'Comma-separated addresses for immediate URGENT critical-vulnerability alerts. Leave blank to use the WordPress admin email.', 'kdna-sentinel' ); ?>
+				</p>
+			</td>
+		</tr>
+
+		<tr>
+			<th scope="row"><label for="kdna-sentinel-digest-freq"><?php esc_html_e( 'Digest frequency', 'kdna-sentinel' ); ?></label></th>
+			<td>
+				<select id="kdna-sentinel-digest-freq" name="<?php echo esc_attr( $option ); ?>[watch_digest_frequency]">
+					<option value="weekly" <?php selected( $frequency, 'weekly' ); ?>><?php esc_html_e( 'Weekly', 'kdna-sentinel' ); ?></option>
+					<option value="daily" <?php selected( $frequency, 'daily' ); ?>><?php esc_html_e( 'Daily', 'kdna-sentinel' ); ?></option>
+				</select>
+			</td>
+		</tr>
+
+		<tr>
+			<th scope="row"><?php esc_html_e( 'Digest when clean', 'kdna-sentinel' ); ?></th>
+			<td>
+				<input type="hidden" name="<?php echo esc_attr( $option ); ?>[watch_digest_skip_if_clean]" value="0" />
+				<label class="kdna-sentinel-toggle">
+					<input type="checkbox" name="<?php echo esc_attr( $option ); ?>[watch_digest_skip_if_clean]" value="1" <?php checked( $skip_if_clean ); ?> />
+					<?php esc_html_e( 'Skip the digest when nothing is at risk', 'kdna-sentinel' ); ?>
+				</label>
+			</td>
+		</tr>
+
+		<tr>
+			<th scope="row"><?php esc_html_e( 'Instant critical alerts', 'kdna-sentinel' ); ?></th>
+			<td>
+				<input type="hidden" name="<?php echo esc_attr( $option ); ?>[watch_instant_alerts]" value="0" />
+				<label class="kdna-sentinel-toggle">
+					<input type="checkbox" name="<?php echo esc_attr( $option ); ?>[watch_instant_alerts]" value="1" <?php checked( $instant_on ); ?> />
+					<?php esc_html_e( 'Email immediately when a scan newly detects a critical vulnerability', 'kdna-sentinel' ); ?>
+				</label>
 			</td>
 		</tr>
 	</table>

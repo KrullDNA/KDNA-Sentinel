@@ -35,13 +35,14 @@ This is an in-progress build delivered in stages.
 * Stage 3 — Guard Claude API borderline scorer: complete.
 * Stage 4 — Guard quarantine + one-click release: complete.
 * Stage 5 — Watch scanner + local dashboard: complete.
+* Stage 6 — Watch email digest + instant critical alert: complete.
 
-Guard (Stages 0–4) is feature-complete. Watch now reads installed plugins and
+Guard (Stages 0–4) is feature-complete. Watch reads installed plugins and
 checks them against a swappable vulnerability provider (WPScan or Patchstack),
-caching at-risk findings; a daily cron plus a manual "Scan now" refresh the
-cache, and the Watch tab shows a worst-first dashboard with severity, fixed-in
-version, patch lag and a direct update link (or a clean-state message). Alerts
-(Stage 6) and hub reporting (Stage 7) are still to come.
+caches at-risk findings, shows a worst-first dashboard, and now emails a
+configurable daily/weekly digest plus an immediate URGENT alert the moment a
+scan newly detects a critical vulnerability — each to its own recipient list.
+Hub reporting (Stage 7) is still to come.
 
 == Frequently Asked Questions ==
 
@@ -51,6 +52,15 @@ No. Sentinel is not an edge firewall and does not block traffic. It complements
 those tools by covering form spam and plugin patch-lag.
 
 == Changelog ==
+
+= 0.6.0 =
+* Watch alerts: configurable daily/weekly digest of at-risk plugins (with an
+  optional skip-when-clean), and an immediate URGENT email the moment a scan
+  newly detects a critical vulnerability, de-duplicated so the same CVE does not
+  re-alert every scan.
+* Two separate comma-separated recipient lists (digest / critical), each
+  defaulting to the WordPress admin email; malformed addresses are ignored.
+* All mail via wp_mail as HTML with a plain-text fallback.
 
 = 0.5.0 =
 * Watch scanner: reads installed plugins via get_plugins() and checks each

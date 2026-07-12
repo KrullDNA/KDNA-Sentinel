@@ -158,6 +158,13 @@ final class KDNA_Sentinel_Core {
 			// Watch scanner (Stage 5).
 			'watch_provider'              => 'wpscan',
 			'watch_api_key'               => '',
+
+			// Watch alerts (Stage 6).
+			'watch_digest_recipients'     => '',
+			'watch_critical_recipients'   => '',
+			'watch_digest_frequency'      => 'weekly',
+			'watch_digest_skip_if_clean'  => 1,
+			'watch_instant_alerts'        => 1,
 		);
 	}
 
