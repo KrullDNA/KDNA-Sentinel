@@ -1,9 +1,20 @@
 /**
  * KDNA Sentinel — admin scripts.
- * Loaded only on Sentinel admin screens. No behaviour required yet;
- * this file is the enqueue target that later stages build on.
+ * Loaded only on Sentinel admin screens.
  */
 ( function () {
 	'use strict';
-	// Intentionally empty for Stage 1 — toggles are handled server-side.
+
+	document.addEventListener( 'click', function ( event ) {
+		var link = event.target.closest ? event.target.closest( '.kdna-preview-toggle' ) : null;
+		if ( ! link ) {
+			return;
+		}
+		event.preventDefault();
+		var id = link.getAttribute( 'data-item' );
+		var panel = document.getElementById( 'kdna-preview-' + id );
+		if ( panel ) {
+			panel.style.display = ( panel.style.display === 'none' || ! panel.style.display ) ? 'block' : 'none';
+		}
+	} );
 }() );

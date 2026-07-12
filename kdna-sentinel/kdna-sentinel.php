@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 define( 'KDNA_SENTINEL_VERSION', '0.1.0' );
 
 // Bump when the custom table schema changes so upgrades re-run dbDelta.
-define( 'KDNA_SENTINEL_DB_VERSION', '1' );
+define( 'KDNA_SENTINEL_DB_VERSION', '2' );
 
 define( 'KDNA_SENTINEL_FILE', __FILE__ );
 define( 'KDNA_SENTINEL_DIR', plugin_dir_path( __FILE__ ) );

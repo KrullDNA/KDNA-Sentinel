@@ -31,6 +31,17 @@ class KDNA_Sentinel_Activator {
 		self::create_tables();
 		self::seed_default_settings();
 		update_option( self::DB_VERSION_OPTION, KDNA_SENTINEL_DB_VERSION );
+
+		// Schedule the daily quarantine purge and the daily Watch scan.
+		if ( ! wp_next_scheduled( 'kdna_sentinel_guard_purge' ) ) {
+			wp_schedule_event( time(), 'daily', 'kdna_sentinel_guard_purge' );
+		}
+		if ( ! wp_next_scheduled( 'kdna_sentinel_watch_scan' ) ) {
+			wp_schedule_event( time(), 'daily', 'kdna_sentinel_watch_scan' );
+		}
+		if ( ! wp_next_scheduled( 'kdna_sentinel_watch_digest' ) ) {
+			wp_schedule_event( time(), 'daily', 'kdna_sentinel_watch_digest' );
+		}
 	}
 
 	/**
@@ -42,7 +53,9 @@ class KDNA_Sentinel_Activator {
 	 * @return void
 	 */
 	public static function deactivate() {
-		// Placeholder for future cron unscheduling (Watch/Guard purge jobs).
+		wp_clear_scheduled_hook( 'kdna_sentinel_guard_purge' );
+		wp_clear_scheduled_hook( 'kdna_sentinel_watch_scan' );
+		wp_clear_scheduled_hook( 'kdna_sentinel_watch_digest' );
 	}
 
 	/**
@@ -96,6 +109,7 @@ class KDNA_Sentinel_Activator {
 		) {$charset_collate};";
 
 		// Watch: cached vulnerability-scan results per installed plugin.
+		// fixed_at (best-available fix/disclosure date) backs the "patch lag" metric.
 		$sql_vuln_cache = "CREATE TABLE {$vuln_cache} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			plugin_slug varchar(191) NOT NULL DEFAULT '',
@@ -103,6 +117,7 @@ class KDNA_Sentinel_Activator {
 			vuln_id varchar(100) NOT NULL DEFAULT '',
 			severity varchar(20) NOT NULL DEFAULT '',
 			fixed_in varchar(50) NOT NULL DEFAULT '',
+			fixed_at datetime DEFAULT NULL,
 			detected_at datetime NOT NULL,
 			PRIMARY KEY  (id),
 			KEY plugin_slug (plugin_slug),
