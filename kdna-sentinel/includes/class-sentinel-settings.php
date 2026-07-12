@@ -189,6 +189,22 @@ class KDNA_Sentinel_Settings {
 			}
 		}
 
+		// Watch provider (whitelisted).
+		if ( array_key_exists( 'watch_provider', $input ) ) {
+			$provider                 = sanitize_key( wp_unslash( $input['watch_provider'] ) );
+			$clean['watch_provider']  = in_array( $provider, array( 'wpscan', 'patchstack' ), true ) ? $provider : 'wpscan';
+		}
+
+		// Watch API key: same masking rules as the Guard key.
+		if ( ! empty( $input['watch_api_key_remove'] ) ) {
+			$clean['watch_api_key'] = '';
+		} elseif ( isset( $input['watch_api_key'] ) ) {
+			$wkey = trim( (string) wp_unslash( $input['watch_api_key'] ) );
+			if ( '' !== $wkey ) {
+				$clean['watch_api_key'] = sanitize_text_field( $wkey );
+			}
+		}
+
 		$merged = array_merge( $existing, $clean );
 
 		// Keep the in-memory copy in sync with what was just saved.

@@ -76,3 +76,23 @@
 	white-space: pre-wrap;
 	word-break: break-word;
 }
+
+.kdna-sev {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 3px;
+	font-weight: 600;
+	font-size: 12px;
+	color: #fff;
+}
+
+.kdna-sev-critical { background: #8a1f11; }
+.kdna-sev-high     { background: #d63638; }
+.kdna-sev-medium   { background: #dba617; color: #1d2327; }
+.kdna-sev-low      { background: #2271b1; }
+.kdna-sev-unknown  { background: #787c82; }
+
+.kdna-sentinel-vuln-table th,
+.kdna-sentinel-vuln-table td {
+	vertical-align: middle;
+}

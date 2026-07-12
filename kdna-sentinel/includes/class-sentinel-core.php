@@ -154,6 +154,10 @@ final class KDNA_Sentinel_Core {
 			'guard_model'                 => 'claude-haiku-4-5',
 			'guard_confidence_threshold'  => 0.5,
 			'guard_daily_cap'             => 100,
+
+			// Watch scanner (Stage 5).
+			'watch_provider'              => 'wpscan',
+			'watch_api_key'               => '',
 		);
 	}
 

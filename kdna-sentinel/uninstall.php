@@ -28,6 +28,8 @@ foreach ( $kdna_sentinel_tables as $kdna_sentinel_table ) {
 delete_option( 'kdna_sentinel_settings' );
 delete_option( 'kdna_sentinel_db_version' );
 delete_option( 'kdna_sentinel_guard_api_usage' );
+delete_option( 'kdna_sentinel_watch_status' );
 
-// Clear the daily purge cron in case it is still scheduled.
+// Clear scheduled crons in case they are still scheduled.
 wp_clear_scheduled_hook( 'kdna_sentinel_guard_purge' );
+wp_clear_scheduled_hook( 'kdna_sentinel_watch_scan' );
