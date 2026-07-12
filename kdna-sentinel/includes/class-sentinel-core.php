@@ -165,6 +165,12 @@ final class KDNA_Sentinel_Core {
 			'watch_digest_frequency'      => 'weekly',
 			'watch_digest_skip_if_clean'  => 1,
 			'watch_instant_alerts'        => 1,
+
+			// Hub (Stage 7) — off by default.
+			'hub_report_enabled'          => 0,
+			'hub_url'                     => '',
+			'hub_secret'                  => '',
+			'hub_is_hub'                  => 0,
 		);
 	}
 

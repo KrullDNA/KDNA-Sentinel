@@ -36,13 +36,12 @@ This is an in-progress build delivered in stages.
 * Stage 4 — Guard quarantine + one-click release: complete.
 * Stage 5 — Watch scanner + local dashboard: complete.
 * Stage 6 — Watch email digest + instant critical alert: complete.
+* Stage 7 — Hub optional report-in + master dashboard: complete.
 
-Guard (Stages 0–4) is feature-complete. Watch reads installed plugins and
-checks them against a swappable vulnerability provider (WPScan or Patchstack),
-caches at-risk findings, shows a worst-first dashboard, and now emails a
-configurable daily/weekly digest plus an immediate URGENT alert the moment a
-scan newly detects a critical vulnerability — each to its own recipient list.
-Hub reporting (Stage 7) is still to come.
+All stages complete. Guard defends KDNA Forms and WooCommerce account forms;
+Watch monitors plugin patch-lag with alerts; the optional Hub lets client sites
+report signed scan summaries to a central KDNA dashboard. Both modules toggle
+independently; the Hub is off by default.
 
 == Frequently Asked Questions ==
 
@@ -52,6 +51,17 @@ No. Sentinel is not an edge firewall and does not block traffic. It complements
 those tools by covering form spam and plugin patch-lag.
 
 == Changelog ==
+
+= 0.7.0 =
+* Hub (off by default): client sites can POST a compact, HMAC-signed scan
+  summary (site URL, plugin risk list, worst severity, timestamp — metadata
+  only, never content or PII) to a nominated hub after each scan.
+* Hub receiver: a REST route (/kdna-sentinel/v1/report) active only when "This
+  site is the KDNA hub" is on; verifies the HMAC against the shared secret,
+  rejects unsigned/invalid, and stores accepted reports.
+* Hub dashboard: every reporting site in one table — site, worst severity,
+  at-risk count, longest patch lag, last check-in — red-flagging any site with a
+  critical vulnerability or a stale check-in.
 
 = 0.6.0 =
 * Watch alerts: configurable daily/weekly digest of at-risk plugins (with an

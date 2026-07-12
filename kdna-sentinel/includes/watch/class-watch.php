@@ -91,6 +91,13 @@ final class KDNA_Sentinel_Watch {
 		require_once KDNA_SENTINEL_DIR . 'includes/watch/class-watch-alerts.php';
 		$this->alerts = new KDNA_Sentinel_Watch_Alerts( $core, $this->scanner );
 		$this->alerts->register();
+
+		// Optional hub report-in (off by default).
+		if ( $core->get_setting( 'hub_report_enabled', 0 ) ) {
+			require_once KDNA_SENTINEL_DIR . 'includes/watch/class-watch-hub.php';
+			$hub = new KDNA_Sentinel_Watch_Hub( $core );
+			$hub->register();
+		}
 	}
 
 	/**

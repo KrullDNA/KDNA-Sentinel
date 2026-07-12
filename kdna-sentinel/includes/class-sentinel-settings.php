@@ -142,8 +142,8 @@ class KDNA_Sentinel_Settings {
 
 		$clean = array();
 
-		// Boolean flags (master toggles + Guard honeypot + Watch alert flags).
-		foreach ( array( 'guard_enabled', 'watch_enabled', 'guard_honeypot_enabled', 'watch_digest_skip_if_clean', 'watch_instant_alerts' ) as $flag ) {
+		// Boolean flags (module toggles, Guard honeypot, Watch alert flags, Hub toggles).
+		foreach ( array( 'guard_enabled', 'watch_enabled', 'guard_honeypot_enabled', 'watch_digest_skip_if_clean', 'watch_instant_alerts', 'hub_report_enabled', 'hub_is_hub' ) as $flag ) {
 			if ( array_key_exists( $flag, $input ) ) {
 				$clean[ $flag ] = empty( $input[ $flag ] ) ? 0 : 1;
 			}
@@ -215,6 +215,21 @@ class KDNA_Sentinel_Settings {
 		foreach ( array( 'watch_digest_recipients', 'watch_critical_recipients' ) as $field ) {
 			if ( array_key_exists( $field, $input ) ) {
 				$clean[ $field ] = $this->sanitize_email_list( (string) wp_unslash( $input[ $field ] ) );
+			}
+		}
+
+		// Hub URL.
+		if ( array_key_exists( 'hub_url', $input ) ) {
+			$clean['hub_url'] = esc_url_raw( trim( (string) wp_unslash( $input['hub_url'] ) ) );
+		}
+
+		// Hub shared secret: same masking rules as the API keys.
+		if ( ! empty( $input['hub_secret_remove'] ) ) {
+			$clean['hub_secret'] = '';
+		} elseif ( isset( $input['hub_secret'] ) ) {
+			$secret = trim( (string) wp_unslash( $input['hub_secret'] ) );
+			if ( '' !== $secret ) {
+				$clean['hub_secret'] = sanitize_text_field( $secret );
 			}
 		}
 
