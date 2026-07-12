@@ -31,6 +31,11 @@ class KDNA_Sentinel_Activator {
 		self::create_tables();
 		self::seed_default_settings();
 		update_option( self::DB_VERSION_OPTION, KDNA_SENTINEL_DB_VERSION );
+
+		// Schedule the daily quarantine purge.
+		if ( ! wp_next_scheduled( 'kdna_sentinel_guard_purge' ) ) {
+			wp_schedule_event( time(), 'daily', 'kdna_sentinel_guard_purge' );
+		}
 	}
 
 	/**
@@ -42,7 +47,7 @@ class KDNA_Sentinel_Activator {
 	 * @return void
 	 */
 	public static function deactivate() {
-		// Placeholder for future cron unscheduling (Watch/Guard purge jobs).
+		wp_clear_scheduled_hook( 'kdna_sentinel_guard_purge' );
 	}
 
 	/**

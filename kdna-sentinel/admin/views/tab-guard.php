@@ -25,6 +25,24 @@ $conf_threshold  = isset( $settings['guard_confidence_threshold'] ) ? (float) $s
 $daily_cap       = isset( $settings['guard_daily_cap'] ) ? (int) $settings['guard_daily_cap'] : 100;
 $option          = KDNA_Sentinel_Core::OPTION;
 ?>
+<?php
+// Row-action result notice (release / delete / block IP / purge).
+$kdna_notice = isset( $_GET['kdna_notice'] ) ? sanitize_key( wp_unslash( $_GET['kdna_notice'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+$kdna_notices = array(
+	'released'       => array( 'updated', __( 'Submission released and processed as genuine.', 'kdna-sentinel' ) ),
+	'release_failed' => array( 'error', __( 'The submission was released, but could not be re-processed automatically.', 'kdna-sentinel' ) ),
+	'deleted'        => array( 'updated', __( 'Quarantined submission deleted.', 'kdna-sentinel' ) ),
+	'blocked'        => array( 'updated', __( 'IP added to the Guard blocklist.', 'kdna-sentinel' ) ),
+	'error'          => array( 'error', __( 'That action could not be completed.', 'kdna-sentinel' ) ),
+);
+if ( isset( $kdna_notices[ $kdna_notice ] ) ) {
+	printf(
+		'<div class="notice notice-%s is-dismissible"><p>%s</p></div>',
+		esc_attr( $kdna_notices[ $kdna_notice ][0] ),
+		esc_html( $kdna_notices[ $kdna_notice ][1] )
+	);
+}
+?>
 <form method="post" action="options.php" class="kdna-sentinel-form">
 	<?php settings_fields( KDNA_Sentinel_Settings::GROUP ); ?>
 
@@ -163,3 +181,9 @@ $option          = KDNA_Sentinel_Core::OPTION;
 
 	<?php submit_button(); ?>
 </form>
+
+<?php
+if ( class_exists( 'KDNA_Sentinel_Guard_Quarantine' ) ) {
+	KDNA_Sentinel_Guard_Quarantine::instance()->render_list();
+}
+?>

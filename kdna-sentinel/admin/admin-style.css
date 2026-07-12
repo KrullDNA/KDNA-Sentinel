@@ -45,3 +45,34 @@
 .kdna-sentinel-form h2 {
 	margin-top: 0;
 }
+
+.kdna-sentinel-sep {
+	margin: 28px 0 8px;
+	border: 0;
+	border-top: 1px solid #c3c4c7;
+}
+
+.kdna-preview-panel {
+	margin: 8px 0 4px;
+	padding: 10px 14px;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	max-width: 640px;
+}
+
+.kdna-preview-list {
+	margin: 0;
+}
+
+.kdna-preview-list dt {
+	font-weight: 600;
+	color: #1f3a5f;
+	margin-top: 6px;
+}
+
+.kdna-preview-list dd {
+	margin: 0 0 4px;
+	white-space: pre-wrap;
+	word-break: break-word;
+}

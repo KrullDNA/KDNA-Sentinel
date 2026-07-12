@@ -33,12 +33,14 @@ This is an in-progress build delivered in stages.
 * Stage 1 — Plugin skeleton, settings, module toggles, custom tables: complete.
 * Stage 2 — Guard heuristics engine + form bindings: complete.
 * Stage 3 — Guard Claude API borderline scorer: complete.
+* Stage 4 — Guard quarantine + one-click release: complete.
 
 Guard's free detection layer is wired into KDNA Forms (via upstream
 interception, no KDNA Forms changes) and WooCommerce account forms. Borderline
 submissions are scored by the Claude API (message body only; fail-open on any
-error). Blocked submissions are logged for now; quarantine storage arrives in
-Stage 4. Watch has no logic yet.
+error). Blocked submissions are held in a quarantine list with Preview and a
+one-click "this was genuine — let it through" release; a daily cron purges rows
+older than 30 days. Watch has no logic yet.
 
 == Frequently Asked Questions ==
 
@@ -48,6 +50,14 @@ No. Sentinel is not an edge firewall and does not block traffic. It complements
 those tools by covering form spam and plugin patch-lag.
 
 == Changelog ==
+
+= 0.4.0 =
+* Guard quarantine: every blocked/spam submission is stored (source, form,
+  reason, score, IP, full payload). Admin list under the Guard tab with Preview
+  and row actions — one-click "This was genuine — let it through" (re-runs the
+  genuine path: KDNA Forms entries are un-flagged and re-notified), Delete, and
+  Block this IP. All actions nonce-protected.
+* Daily wp-cron purge of quarantine rows older than 30 days.
 
 = 0.3.0 =
 * Guard Claude API borderline scorer: only borderline submissions are sent to a

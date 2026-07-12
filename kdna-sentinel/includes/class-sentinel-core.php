@@ -68,6 +68,12 @@ final class KDNA_Sentinel_Core {
 		// Apply any pending schema upgrade in the admin.
 		add_action( 'admin_init', array( 'KDNA_Sentinel_Activator', 'maybe_upgrade' ) );
 
+		// Guard quarantine: store, release, admin row actions and daily purge.
+		// Registered regardless of the Guard toggle so held items stay
+		// manageable and the purge keeps running even if Guard is switched off.
+		require_once KDNA_SENTINEL_DIR . 'includes/guard/class-guard-quarantine.php';
+		KDNA_Sentinel_Guard_Quarantine::instance()->register();
+
 		// Settings UI (admin only).
 		if ( is_admin() ) {
 			require_once KDNA_SENTINEL_DIR . 'includes/class-sentinel-settings.php';
