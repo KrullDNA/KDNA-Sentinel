@@ -32,11 +32,13 @@ This is an in-progress build delivered in stages.
 * Stage 0 — Repo archaeology & interception strategy: complete.
 * Stage 1 — Plugin skeleton, settings, module toggles, custom tables: complete.
 * Stage 2 — Guard heuristics engine + form bindings: complete.
+* Stage 3 — Guard Claude API borderline scorer: complete.
 
 Guard's free detection layer is wired into KDNA Forms (via upstream
-interception, no KDNA Forms changes) and WooCommerce account forms. Blocked
-submissions are logged for now; quarantine storage arrives in Stage 4. Borderline
-submissions are flagged but not yet API-scored (Stage 3). Watch has no logic yet.
+interception, no KDNA Forms changes) and WooCommerce account forms. Borderline
+submissions are scored by the Claude API (message body only; fail-open on any
+error). Blocked submissions are logged for now; quarantine storage arrives in
+Stage 4. Watch has no logic yet.
 
 == Frequently Asked Questions ==
 
@@ -46,6 +48,14 @@ No. Sentinel is not an edge firewall and does not block traffic. It complements
 those tools by covering form spam and plugin patch-lag.
 
 == Changelog ==
+
+= 0.3.0 =
+* Guard Claude API borderline scorer: only borderline submissions are sent to a
+  Haiku-class model (message body only, never full PII), classified SPAM/HAM
+  with a confidence, and quarantined below a configurable HAM confidence
+  threshold. Strict fail-open on any API error, timeout or unparseable reply.
+* Guard settings: API key (stored server-side, never echoed back in full),
+  model name, confidence threshold, and a per-day API call cap.
 
 = 0.2.0 =
 * Guard heuristics engine (PASS/BLOCK/BORDERLINE): honeypot, signed time-to-

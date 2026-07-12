@@ -17,6 +17,12 @@ $guard_enabled   = ! empty( $settings['guard_enabled'] );
 $honeypot_on     = ! empty( $settings['guard_honeypot_enabled'] );
 $threshold       = isset( $settings['guard_timing_threshold'] ) ? (int) $settings['guard_timing_threshold'] : 2;
 $ip_blocklist    = isset( $settings['guard_ip_blocklist'] ) ? (string) $settings['guard_ip_blocklist'] : '';
+$api_key         = isset( $settings['guard_api_key'] ) ? (string) $settings['guard_api_key'] : '';
+$api_key_set     = ( '' !== $api_key );
+$api_key_last4   = $api_key_set ? substr( $api_key, -4 ) : '';
+$model           = isset( $settings['guard_model'] ) ? (string) $settings['guard_model'] : 'claude-haiku-4-5';
+$conf_threshold  = isset( $settings['guard_confidence_threshold'] ) ? (float) $settings['guard_confidence_threshold'] : 0.5;
+$daily_cap       = isset( $settings['guard_daily_cap'] ) ? (int) $settings['guard_daily_cap'] : 100;
 $option          = KDNA_Sentinel_Core::OPTION;
 ?>
 <form method="post" action="options.php" class="kdna-sentinel-form">
@@ -78,6 +84,78 @@ $option          = KDNA_Sentinel_Core::OPTION;
 					placeholder="203.0.113.10&#10;2001:db8::1"><?php echo esc_textarea( $ip_blocklist ); ?></textarea>
 				<p class="description">
 					<?php esc_html_e( 'One IP address per line. Submissions from these IPs are blocked outright. Invalid entries are dropped on save.', 'kdna-sentinel' ); ?>
+				</p>
+			</td>
+		</tr>
+	</table>
+
+	<h2><?php esc_html_e( 'Claude API borderline scorer', 'kdna-sentinel' ); ?></h2>
+	<p class="description">
+		<?php esc_html_e( 'Only borderline submissions (passed the hard checks but with soft anomalies) are sent to the Claude API, and only the message body is sent — never the full submission or other personal data. On any API error the submission is let through (fail-open).', 'kdna-sentinel' ); ?>
+	</p>
+
+	<table class="form-table" role="presentation">
+		<tr>
+			<th scope="row">
+				<label for="kdna-sentinel-api-key"><?php esc_html_e( 'Anthropic API key', 'kdna-sentinel' ); ?></label>
+			</th>
+			<td>
+				<input type="password" id="kdna-sentinel-api-key" class="regular-text" autocomplete="off"
+					name="<?php echo esc_attr( $option ); ?>[guard_api_key]" value="" />
+				<p class="description">
+					<?php
+					if ( $api_key_set ) {
+						/* translators: %s: last four characters of the stored API key. */
+						printf( esc_html__( 'A key is stored (ending %s). Leave blank to keep it, or enter a new key to replace it.', 'kdna-sentinel' ), '<code>&bull;&bull;&bull;&bull;' . esc_html( $api_key_last4 ) . '</code>' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					} else {
+						esc_html_e( 'Enter your Anthropic API key. Without a key, borderline submissions are simply let through.', 'kdna-sentinel' );
+					}
+					?>
+				</p>
+				<?php if ( $api_key_set ) : ?>
+					<label class="kdna-sentinel-toggle">
+						<input type="checkbox" name="<?php echo esc_attr( $option ); ?>[guard_api_key_remove]" value="1" />
+						<?php esc_html_e( 'Remove the stored API key', 'kdna-sentinel' ); ?>
+					</label>
+				<?php endif; ?>
+			</td>
+		</tr>
+
+		<tr>
+			<th scope="row">
+				<label for="kdna-sentinel-model"><?php esc_html_e( 'Model', 'kdna-sentinel' ); ?></label>
+			</th>
+			<td>
+				<input type="text" id="kdna-sentinel-model" class="regular-text code"
+					name="<?php echo esc_attr( $option ); ?>[guard_model]" value="<?php echo esc_attr( $model ); ?>" />
+				<p class="description">
+					<?php esc_html_e( 'A fast, low-cost Haiku-class model is recommended. Default: claude-haiku-4-5.', 'kdna-sentinel' ); ?>
+				</p>
+			</td>
+		</tr>
+
+		<tr>
+			<th scope="row">
+				<label for="kdna-sentinel-confidence"><?php esc_html_e( 'HAM confidence threshold', 'kdna-sentinel' ); ?></label>
+			</th>
+			<td>
+				<input type="number" min="0" max="1" step="0.05" id="kdna-sentinel-confidence" class="small-text"
+					name="<?php echo esc_attr( $option ); ?>[guard_confidence_threshold]" value="<?php echo esc_attr( $conf_threshold ); ?>" />
+				<p class="description">
+					<?php esc_html_e( 'A borderline submission is let through only when the API judges it genuine (HAM) with at least this confidence (0–1). Below it, the submission is quarantined. Default: 0.5.', 'kdna-sentinel' ); ?>
+				</p>
+			</td>
+		</tr>
+
+		<tr>
+			<th scope="row">
+				<label for="kdna-sentinel-daily-cap"><?php esc_html_e( 'Daily API call cap', 'kdna-sentinel' ); ?></label>
+			</th>
+			<td>
+				<input type="number" min="0" step="1" id="kdna-sentinel-daily-cap" class="small-text"
+					name="<?php echo esc_attr( $option ); ?>[guard_daily_cap]" value="<?php echo esc_attr( $daily_cap ); ?>" />
+				<p class="description">
+					<?php esc_html_e( 'Maximum API calls per day, so a spam flood cannot run up cost. Once reached, borderline submissions are let through for the rest of the day. Set 0 for no limit. Default: 100.', 'kdna-sentinel' ); ?>
 				</p>
 			</td>
 		</tr>

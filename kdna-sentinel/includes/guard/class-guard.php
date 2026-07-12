@@ -67,5 +67,18 @@ final class KDNA_Sentinel_Guard {
 
 		$this->hooks = new KDNA_Sentinel_Guard_Hooks( $heuristics, $honeypot_enabled );
 		$this->hooks->register();
+
+		// API scorer for borderline submissions — only wired when a key is set.
+		$api_key = trim( (string) $core->get_setting( 'guard_api_key', '' ) );
+		if ( '' !== $api_key ) {
+			require_once KDNA_SENTINEL_DIR . 'includes/guard/class-guard-scorer.php';
+			$scorer = new KDNA_Sentinel_Guard_Scorer(
+				$api_key,
+				(string) $core->get_setting( 'guard_model', 'claude-haiku-4-5' ),
+				(float) $core->get_setting( 'guard_confidence_threshold', 0.5 ),
+				(int) $core->get_setting( 'guard_daily_cap', 100 )
+			);
+			$scorer->register();
+		}
 	}
 }

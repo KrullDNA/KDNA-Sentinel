@@ -161,6 +161,34 @@ class KDNA_Sentinel_Settings {
 			$clean['guard_ip_blocklist']  = implode( "\n", $ips );
 		}
 
+		// Guard model name (loose validation).
+		if ( array_key_exists( 'guard_model', $input ) ) {
+			$model                = preg_replace( '/[^a-zA-Z0-9._\-]/', '', (string) wp_unslash( $input['guard_model'] ) );
+			$clean['guard_model'] = ( '' !== $model ) ? $model : 'claude-haiku-4-5';
+		}
+
+		// Guard confidence threshold, clamped to 0..1.
+		if ( array_key_exists( 'guard_confidence_threshold', $input ) ) {
+			$clean['guard_confidence_threshold'] = max( 0.0, min( 1.0, (float) $input['guard_confidence_threshold'] ) );
+		}
+
+		// Guard per-day API call cap (0 = unlimited).
+		if ( array_key_exists( 'guard_daily_cap', $input ) ) {
+			$clean['guard_daily_cap'] = absint( $input['guard_daily_cap'] );
+		}
+
+		// Guard API key: never round-tripped to the browser. Remove-on-request,
+		// otherwise store a newly entered key, otherwise preserve the stored one
+		// (a blank submit leaves the key unset in $clean, so the merge keeps it).
+		if ( ! empty( $input['guard_api_key_remove'] ) ) {
+			$clean['guard_api_key'] = '';
+		} elseif ( isset( $input['guard_api_key'] ) ) {
+			$key = trim( (string) wp_unslash( $input['guard_api_key'] ) );
+			if ( '' !== $key ) {
+				$clean['guard_api_key'] = sanitize_text_field( $key );
+			}
+		}
+
 		$merged = array_merge( $existing, $clean );
 
 		// Keep the in-memory copy in sync with what was just saved.

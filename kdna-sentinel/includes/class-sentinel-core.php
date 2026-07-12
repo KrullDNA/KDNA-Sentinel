@@ -139,9 +139,15 @@ final class KDNA_Sentinel_Core {
 			'watch_enabled'          => 0,
 
 			// Guard heuristics.
-			'guard_honeypot_enabled' => 1,
-			'guard_timing_threshold' => 2,
-			'guard_ip_blocklist'     => '',
+			'guard_honeypot_enabled'      => 1,
+			'guard_timing_threshold'      => 2,
+			'guard_ip_blocklist'          => '',
+
+			// Guard API scorer (Stage 3).
+			'guard_api_key'               => '',
+			'guard_model'                 => 'claude-haiku-4-5',
+			'guard_confidence_threshold'  => 0.5,
+			'guard_daily_cap'             => 100,
 		);
 	}
 

@@ -128,6 +128,7 @@ class KDNA_Sentinel_Guard_Hooks {
 				'source'  => 'kdna_forms',
 				'form_id' => isset( $form['id'] ) ? (string) $form['id'] : '',
 				'ip'      => $context['ip'],
+				'message' => $this->extract_kdna_message( $form, $entry ),
 				'payload' => is_array( $entry ) ? $entry : array(),
 			);
 
@@ -179,7 +180,8 @@ class KDNA_Sentinel_Guard_Hooks {
 		return $this->evaluate_wc_error_form(
 			$errors,
 			'woocommerce_registration',
-			array( 'username' => $username, 'email' => $email )
+			array( 'username' => $username, 'email' => $email ),
+			'' // No free-text message on registration.
 		);
 	}
 
@@ -195,7 +197,8 @@ class KDNA_Sentinel_Guard_Hooks {
 		return $this->evaluate_wc_error_form(
 			$errors,
 			'woocommerce_login',
-			array( 'username' => $username )
+			array( 'username' => $username ),
+			'' // No free-text message on login.
 		);
 	}
 
@@ -233,7 +236,10 @@ class KDNA_Sentinel_Guard_Hooks {
 			}
 		}
 
-		$this->evaluate_wc_error_form( $errors, 'woocommerce_checkout', $payload );
+		// Only the order note is free-text content worth scoring.
+		$message = isset( $payload['order_comments'] ) ? (string) $payload['order_comments'] : '';
+
+		$this->evaluate_wc_error_form( $errors, 'woocommerce_checkout', $payload, $message );
 	}
 
 	/**
@@ -242,9 +248,10 @@ class KDNA_Sentinel_Guard_Hooks {
 	 * @param WP_Error $errors  Error accumulator.
 	 * @param string   $source  Source slug.
 	 * @param array    $payload Non-sensitive payload for quarantine.
+	 * @param string   $message Free-text message body to score (may be empty).
 	 * @return WP_Error
 	 */
-	private function evaluate_wc_error_form( $errors, $source, array $payload ) {
+	private function evaluate_wc_error_form( $errors, $source, array $payload, $message = '' ) {
 		if ( ! ( $errors instanceof WP_Error ) ) {
 			return $errors;
 		}
@@ -257,6 +264,7 @@ class KDNA_Sentinel_Guard_Hooks {
 				'source'  => $source,
 				'form_id' => '',
 				'ip'      => $context['ip'],
+				'message' => (string) $message,
 				'payload' => $payload,
 			);
 
@@ -298,14 +306,17 @@ class KDNA_Sentinel_Guard_Hooks {
 			$context = $this->build_context();
 			$verdict = $this->heuristics->evaluate( $context );
 
+			$content = isset( $commentdata['comment_content'] ) ? (string) $commentdata['comment_content'] : '';
+
 			$meta = array(
 				'source'  => 'woocommerce_review',
 				'form_id' => isset( $commentdata['comment_post_ID'] ) ? (string) $commentdata['comment_post_ID'] : '',
 				'ip'      => $context['ip'],
+				'message' => $content,
 				'payload' => array(
 					'author'  => isset( $commentdata['comment_author'] ) ? $commentdata['comment_author'] : '',
 					'email'   => isset( $commentdata['comment_author_email'] ) ? $commentdata['comment_author_email'] : '',
-					'content' => isset( $commentdata['comment_content'] ) ? $commentdata['comment_content'] : '',
+					'content' => $content,
 				),
 			);
 
@@ -357,6 +368,19 @@ class KDNA_Sentinel_Guard_Hooks {
 			$is_spam = (bool) apply_filters( 'kdna_sentinel_guard_borderline_is_spam', false, $verdict, $meta );
 
 			if ( $is_spam ) {
+				/**
+				 * Lets the scorer attach its confidence to the verdict so the
+				 * quarantine store (Stage 4) can record a score.
+				 *
+				 * @param float|null                  $score   Default score.
+				 * @param KDNA_Sentinel_Guard_Verdict $verdict The heuristic verdict.
+				 * @param array                       $meta    Source/form/ip/message.
+				 */
+				$score = apply_filters( 'kdna_sentinel_guard_borderline_score', $verdict->score(), $verdict, $meta );
+				if ( null !== $score ) {
+					$verdict = $verdict->with_score( (float) $score );
+				}
+
 				$this->handle_block( $verdict, $meta );
 				return true;
 			}
@@ -385,6 +409,57 @@ class KDNA_Sentinel_Guard_Hooks {
 		 * @param array                       $meta    Source/form/ip/payload.
 		 */
 		do_action( 'kdna_sentinel_guard_blocked', $verdict, $meta );
+	}
+
+	/**
+	 * Extracts only the free-text message field(s) from a KDNA Forms entry.
+	 *
+	 * Deliberately returns just message-type content — never name, email or
+	 * other PII — so the API scorer receives the minimum needed to classify.
+	 *
+	 * @param array $form  The form object.
+	 * @param array $entry The entry object.
+	 * @return string
+	 */
+	private function extract_kdna_message( $form, $entry ) {
+		if ( ! is_array( $entry ) || empty( $form['fields'] ) || ! is_array( $form['fields'] ) ) {
+			return '';
+		}
+
+		$message_types = array( 'textarea', 'message', 'post_content', 'post_excerpt' );
+		$parts         = array();
+
+		foreach ( $form['fields'] as $field ) {
+			$type = $this->field_prop( $field, 'type' );
+			$id   = $this->field_prop( $field, 'id' );
+
+			if ( in_array( $type, $message_types, true ) && '' !== (string) $id && isset( $entry[ $id ] ) ) {
+				$value = $entry[ $id ];
+				if ( is_string( $value ) && '' !== trim( $value ) ) {
+					$parts[] = trim( $value );
+				}
+			}
+		}
+
+		return implode( "\n\n", $parts );
+	}
+
+	/**
+	 * Reads a property from a field that may be an object or an array.
+	 *
+	 * @param mixed  $field Field.
+	 * @param string $prop  Property name.
+	 * @return mixed
+	 */
+	private function field_prop( $field, $prop ) {
+		if ( is_object( $field ) ) {
+			return isset( $field->$prop ) ? $field->$prop : '';
+		}
+		if ( is_array( $field ) ) {
+			return isset( $field[ $prop ] ) ? $field[ $prop ] : '';
+		}
+
+		return '';
 	}
 
 	/**
