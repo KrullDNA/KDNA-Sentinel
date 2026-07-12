@@ -142,11 +142,23 @@ class KDNA_Sentinel_Settings {
 
 		$clean = array();
 
-		// Boolean master toggles.
-		foreach ( array( 'guard_enabled', 'watch_enabled' ) as $flag ) {
+		// Boolean flags (master toggles + Guard honeypot).
+		foreach ( array( 'guard_enabled', 'watch_enabled', 'guard_honeypot_enabled' ) as $flag ) {
 			if ( array_key_exists( $flag, $input ) ) {
 				$clean[ $flag ] = empty( $input[ $flag ] ) ? 0 : 1;
 			}
+		}
+
+		// Guard timing threshold: whole seconds, 0 disables the check.
+		if ( array_key_exists( 'guard_timing_threshold', $input ) ) {
+			$clean['guard_timing_threshold'] = min( 300, absint( $input['guard_timing_threshold'] ) );
+		}
+
+		// Guard IP blocklist: keep only valid IPs, one per line.
+		if ( array_key_exists( 'guard_ip_blocklist', $input ) ) {
+			require_once KDNA_SENTINEL_DIR . 'includes/guard/class-guard-heuristics.php';
+			$ips                          = KDNA_Sentinel_Guard_Heuristics::parse_ip_blocklist( (string) wp_unslash( $input['guard_ip_blocklist'] ) );
+			$clean['guard_ip_blocklist']  = implode( "\n", $ips );
 		}
 
 		$merged = array_merge( $existing, $clean );

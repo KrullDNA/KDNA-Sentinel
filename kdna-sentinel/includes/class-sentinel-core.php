@@ -134,8 +134,14 @@ final class KDNA_Sentinel_Core {
 	 */
 	public static function default_settings() {
 		return array(
-			'guard_enabled' => 0,
-			'watch_enabled' => 0,
+			// Master toggles.
+			'guard_enabled'          => 0,
+			'watch_enabled'          => 0,
+
+			// Guard heuristics.
+			'guard_honeypot_enabled' => 1,
+			'guard_timing_threshold' => 2,
+			'guard_ip_blocklist'     => '',
 		);
 	}
 

@@ -31,9 +31,12 @@ This is an in-progress build delivered in stages.
 
 * Stage 0 — Repo archaeology & interception strategy: complete.
 * Stage 1 — Plugin skeleton, settings, module toggles, custom tables: complete.
+* Stage 2 — Guard heuristics engine + form bindings: complete.
 
-No detection or scanning logic is present yet; the Guard and Watch toggles
-persist but do nothing until later stages.
+Guard's free detection layer is wired into KDNA Forms (via upstream
+interception, no KDNA Forms changes) and WooCommerce account forms. Blocked
+submissions are logged for now; quarantine storage arrives in Stage 4. Borderline
+submissions are flagged but not yet API-scored (Stage 3). Watch has no logic yet.
 
 == Frequently Asked Questions ==
 
@@ -43,6 +46,14 @@ No. Sentinel is not an edge firewall and does not block traffic. It complements
 those tools by covering form spam and plugin patch-lag.
 
 == Changelog ==
+
+= 0.2.0 =
+* Guard heuristics engine (PASS/BLOCK/BORDERLINE): honeypot, signed time-to-
+  submit threshold, interaction signal, and local IP blocklist.
+* Guard bound to KDNA Forms via upstream interception and to WooCommerce
+  account forms (registration, login, lost password, review, checkout) when
+  WooCommerce is active. Fail-open throughout.
+* Guard settings: honeypot on/off, timing threshold, IP blocklist.
 
 = 0.1.0 =
 * Initial skeleton: top-level admin menu with Guard, Watch and Hub tabs, master
