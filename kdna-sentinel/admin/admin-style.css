@@ -97,6 +97,7 @@
 	vertical-align: middle;
 }
 
+/* Native multi-select (fallback when JS is unavailable). */
 .kdna-country-select {
 	min-width: 340px;
 	max-width: 480px;
@@ -106,6 +107,78 @@
 
 .kdna-country-select option {
 	padding: 2px 4px;
+}
+
+/* Tag picker (JS-enhanced). The native select is hidden but kept for submit. */
+.kdna-tags {
+	position: relative;
+	max-width: 480px;
+}
+
+.kdna-tags__native {
+	display: none;
+}
+
+.kdna-tags__chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-bottom: 6px;
+}
+
+.kdna-tags__chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	background: #1f3a5f;
+	color: #fff;
+	border-radius: 3px;
+	padding: 3px 6px 3px 10px;
+	font-size: 13px;
+	line-height: 1.6;
+}
+
+.kdna-tags__x {
+	background: transparent;
+	border: 0;
+	color: #cbd5e6;
+	cursor: pointer;
+	font-size: 16px;
+	line-height: 1;
+	padding: 0;
+}
+
+.kdna-tags__x:hover,
+.kdna-tags__x:focus {
+	color: #fff;
+}
+
+.kdna-tags__input {
+	width: 100%;
+}
+
+.kdna-tags__menu {
+	position: absolute;
+	left: 0;
+	right: 0;
+	z-index: 100;
+	max-height: 260px;
+	overflow-y: auto;
+	background: #fff;
+	border: 1px solid #8c8f94;
+	border-top: 0;
+	box-shadow: 0 2px 6px rgba( 0, 0, 0, 0.12 );
+}
+
+.kdna-tags__item {
+	padding: 6px 10px;
+	cursor: pointer;
+}
+
+.kdna-tags__item:hover,
+.kdna-tags__item.is-active {
+	background: #1f3a5f;
+	color: #fff;
 }
 
 .kdna-flag {
