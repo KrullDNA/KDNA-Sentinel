@@ -52,12 +52,13 @@ errors, the submission is let through rather than lost.
   seconds are blocked as automated. Default **2**. Set **0** to disable.
 - **IP blocklist** — one IP address per line; submissions from these IPs are
   blocked outright. Invalid entries are dropped on save.
-- **Country blocklist** — one two-letter ISO country code per line (e.g. `RU`,
-  `CN`, `KP`); submissions from these countries are blocked outright. The
-  visitor country is read from a Cloudflare / CloudFront header when present,
-  otherwise from WooCommerce's bundled geolocation database; when it can't be
-  determined the check is skipped. Only block countries the site has no
-  legitimate audience in.
+- **Country blocklist** — pick the countries to block from the multi-select
+  list (hold Ctrl / Cmd to choose several); submissions from the chosen
+  countries are blocked outright. Select none to disable the check. The visitor
+  country is read from a Cloudflare / CloudFront header when present, otherwise
+  from WooCommerce's bundled geolocation database; when it can't be determined
+  the check is skipped. Only block countries the site has no legitimate audience
+  in.
 
 ### Claude API borderline scorer (optional)
 

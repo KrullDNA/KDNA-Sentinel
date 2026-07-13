@@ -97,6 +97,17 @@
 	vertical-align: middle;
 }
 
+.kdna-country-select {
+	min-width: 340px;
+	max-width: 480px;
+	min-height: 240px;
+	padding: 4px;
+}
+
+.kdna-country-select option {
+	padding: 2px 4px;
+}
+
 .kdna-flag {
 	display: inline-block;
 	margin-left: 6px;
