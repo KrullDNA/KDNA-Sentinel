@@ -20,6 +20,7 @@ $provider      = isset( $settings['watch_provider'] ) ? (string) $settings['watc
 $api_key       = isset( $settings['watch_api_key'] ) ? (string) $settings['watch_api_key'] : '';
 $api_key_set   = ( '' !== $api_key );
 $api_key_last4 = $api_key_set ? substr( $api_key, -4 ) : '';
+$refresh_hours = isset( $settings['watch_feed_refresh_hours'] ) ? (int) $settings['watch_feed_refresh_hours'] : 12;
 $option        = KDNA_Sentinel_Core::OPTION;
 
 $digest_to     = isset( $settings['watch_digest_recipients'] ) ? (string) $settings['watch_digest_recipients'] : '';
@@ -74,7 +75,7 @@ if ( isset( $watch_notices[ $kdna_notice ] ) ) {
 						<option value="<?php echo esc_attr( $slug ); ?>" <?php selected( $provider, $slug ); ?>><?php echo esc_html( $label ); ?></option>
 					<?php endforeach; ?>
 				</select>
-				<p class="description"><?php esc_html_e( 'Which vulnerability database to query. Both take an API key below.', 'kdna-sentinel' ); ?></p>
+				<p class="description"><?php esc_html_e( 'Which vulnerability database to query. WPScan and Patchstack need an API key below; Wordfence Intelligence is free and needs no key.', 'kdna-sentinel' ); ?></p>
 			</td>
 		</tr>
 
@@ -89,7 +90,7 @@ if ( isset( $watch_notices[ $kdna_notice ] ) ) {
 						/* translators: %s: last four characters of the stored API key. */
 						printf( esc_html__( 'A key is stored (ending %s). Leave blank to keep it.', 'kdna-sentinel' ), '<code>&bull;&bull;&bull;&bull;' . esc_html( $api_key_last4 ) . '</code>' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 					} else {
-						esc_html_e( 'Enter your provider API key. Without a key, no scan runs.', 'kdna-sentinel' );
+						esc_html_e( 'Required for WPScan and Patchstack — without a key those providers cannot scan. Optional for Wordfence Intelligence (a key only raises its rate limits).', 'kdna-sentinel' );
 					}
 					?>
 				</p>
@@ -99,6 +100,23 @@ if ( isset( $watch_notices[ $kdna_notice ] ) ) {
 						<?php esc_html_e( 'Remove the stored API key', 'kdna-sentinel' ); ?>
 					</label>
 				<?php endif; ?>
+			</td>
+		</tr>
+
+		<tr>
+			<th scope="row"><label for="kdna-sentinel-refresh"><?php esc_html_e( 'Vulnerability data refresh', 'kdna-sentinel' ); ?></label></th>
+			<td>
+				<select id="kdna-sentinel-refresh" name="<?php echo esc_attr( $option ); ?>[watch_feed_refresh_hours]">
+					<option value="6" <?php selected( $refresh_hours, 6 ); ?>><?php esc_html_e( 'Every 6 hours (freshest)', 'kdna-sentinel' ); ?></option>
+					<option value="12" <?php selected( $refresh_hours, 12 ); ?>><?php esc_html_e( 'Every 12 hours (recommended)', 'kdna-sentinel' ); ?></option>
+					<option value="24" <?php selected( $refresh_hours, 24 ); ?>><?php esc_html_e( 'Once a day (lightest)', 'kdna-sentinel' ); ?></option>
+				</select>
+				<p class="description">
+					<?php esc_html_e( 'How often to download a fresh copy of the vulnerability data. Newly disclosed vulnerabilities can take up to this long to appear. More frequent is more current but uses more bandwidth on each site.', 'kdna-sentinel' ); ?>
+				</p>
+				<p class="description">
+					<?php esc_html_e( 'Only applies to the Wordfence Intelligence provider (WPScan and Patchstack are checked live on every scan).', 'kdna-sentinel' ); ?>
+				</p>
 			</td>
 		</tr>
 	</table>

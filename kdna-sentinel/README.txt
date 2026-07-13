@@ -3,7 +3,7 @@ Contributors: krulldna
 Requires at least: 6.5
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.1.0
+Stable tag: 0.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,23 +25,23 @@ the two gaps edge tools leave for a small-agency client site:
 
 Each module can be switched on or off independently.
 
-== Build status ==
+== What's included ==
 
-This is an in-progress build delivered in stages.
+This 0.1.0 release is the complete plugin, not a partial build:
 
-* Stage 0 — Repo archaeology & interception strategy: complete.
-* Stage 1 — Plugin skeleton, settings, module toggles, custom tables: complete.
-* Stage 2 — Guard heuristics engine + form bindings: complete.
-* Stage 3 — Guard Claude API borderline scorer: complete.
-* Stage 4 — Guard quarantine + one-click release: complete.
-* Stage 5 — Watch scanner + local dashboard: complete.
-* Stage 6 — Watch email digest + instant critical alert: complete.
-* Stage 7 — Hub optional report-in + master dashboard: complete.
+* **Guard** — heuristics engine (honeypot, signed time-to-submit, interaction
+  signal, IP blocklist, country blocklist) with a Claude API borderline scorer, a full quarantine
+  with one-click "this was genuine" release, bound to KDNA Forms and (when
+  active) WooCommerce account forms. Fails open throughout.
+* **Watch** — installed-plugin vulnerability scanner behind a swappable
+  provider (WPScan, Patchstack, or the free no-key Wordfence Intelligence
+  feed), a worst-first local dashboard, configurable daily/weekly digests and
+  instant critical-vulnerability alerts.
+* **Hub** (off by default) — client sites can report a compact, HMAC-signed
+  scan summary to a nominated KDNA hub site, which aggregates every site into
+  one master dashboard.
 
-All stages complete. Guard defends KDNA Forms and WooCommerce account forms;
-Watch monitors plugin patch-lag with alerts; the optional Hub lets client sites
-report signed scan summaries to a central KDNA dashboard. Both modules toggle
-independently; the Hub is off by default.
+Both modules toggle independently; the Hub is off by default.
 
 == Frequently Asked Questions ==
 
@@ -52,63 +52,92 @@ those tools by covering form spam and plugin patch-lag.
 
 == Changelog ==
 
-= 0.7.0 =
-* Hub (off by default): client sites can POST a compact, HMAC-signed scan
-  summary (site URL, plugin risk list, worst severity, timestamp — metadata
-  only, never content or PII) to a nominated hub after each scan.
-* Hub receiver: a REST route (/kdna-sentinel/v1/report) active only when "This
-  site is the KDNA hub" is on; verifies the HMAC against the shared secret,
-  rejects unsigned/invalid, and stores accepted reports.
-* Hub dashboard: every reporting site in one table — site, worst severity,
-  at-risk count, longest patch lag, last check-in — red-flagging any site with a
-  critical vulnerability or a stale check-in.
-
-= 0.6.0 =
-* Watch alerts: configurable daily/weekly digest of at-risk plugins (with an
-  optional skip-when-clean), and an immediate URGENT email the moment a scan
-  newly detects a critical vulnerability, de-duplicated so the same CVE does not
-  re-alert every scan.
-* Two separate comma-separated recipient lists (digest / critical), each
-  defaulting to the WordPress admin email; malformed addresses are ignored.
-* All mail via wp_mail as HTML with a plain-text fallback.
-
-= 0.5.0 =
-* Watch scanner: reads installed plugins via get_plugins() and checks each
-  against a swappable vulnerability provider (WPScan or Patchstack) behind one
-  interface. At-risk findings are cached (per-plugin, so a mid-scan rate limit
-  keeps partial results); daily wp-cron + a manual "Scan now" button drive it;
-  429 responses back off and pause the run.
-* Watch dashboard: worst-first table of at-risk plugins (plugin, installed
-  version, severity, fixed-in, patch lag, update link), or a clear
-  "All plugins current" message.
-* Schema v2: adds fixed_at to the vuln cache to compute patch lag (auto-upgraded
-  on existing installs).
-
 = 0.4.0 =
-* Guard quarantine: every blocked/spam submission is stored (source, form,
-  reason, score, IP, full payload). Admin list under the Guard tab with Preview
-  and row actions — one-click "This was genuine — let it through" (re-runs the
-  genuine path: KDNA Forms entries are un-flagged and re-notified), Delete, and
-  Block this IP. All actions nonce-protected.
-* Daily wp-cron purge of quarantine rows older than 30 days.
+* Watch: a "Vulnerability data refresh" setting on the Watch tab — Every 6
+  hours / Every 12 hours (recommended) / Once a day — controls how often the
+  Wordfence Intelligence feed is refreshed, in plain language. WPScan and
+  Patchstack are unaffected (they are checked live on every scan). The
+  kdna_sentinel_watch_wordfence_cache_ttl filter still overrides this for
+  developers who want a custom interval.
+
+= 0.3.1 =
+* Watch: the Wordfence Intelligence feed is now cached (processed slug index)
+  in a transient for 12 hours, so the multi-megabyte download and JSON decode
+  run at most a couple of times a day instead of on every scan — much lighter
+  on constrained hosting. The lifetime is filterable via
+  kdna_sentinel_watch_wordfence_cache_ttl, and a failed fetch never poisons the
+  cache. The cache is cleared on uninstall.
 
 = 0.3.0 =
-* Guard Claude API borderline scorer: only borderline submissions are sent to a
+* Watch: added Wordfence Intelligence as a third vulnerability provider,
+  alongside WPScan and Patchstack. Its vulnerability feed is free and open, so
+  this provider needs no API key (an optional key only raises rate limits).
+* The provider downloads the feed once per scan and indexes it by plugin slug
+  in memory, so only one request is made per scan regardless of how many
+  plugins are installed; 429s back off and errors leave existing results in
+  place, the same as the other providers.
+
+= 0.2.0 =
+* Guard: a country blocklist alongside the IP blocklist. Enter ISO 3166-1
+  alpha-2 codes (e.g. RU, CN, KP) on the Guard tab and submissions from those
+  countries are blocked outright, the same hard-fail tier as the IP blocklist.
+* The visitor country is resolved with no external API calls — from a
+  Cloudflare / CloudFront edge header when present, otherwise WooCommerce's
+  bundled geolocation database (local lookup only). When it cannot be
+  determined the check is skipped (fail-open), and the blocked country is
+  recorded on the audit log line.
+
+= 0.1.0 =
+First release. The complete plugin — Guard, Watch and the optional Hub.
+
+Guard (AI/bot form-spam defence):
+* Heuristics engine (PASS/BLOCK/BORDERLINE): honeypot, signed time-to-submit
+  threshold, interaction signal, and local IP blocklist.
+* Bound to KDNA Forms via upstream interception and to WooCommerce account
+  forms (registration, login, lost password, review, checkout) when WooCommerce
+  is active. Fails open throughout.
+* Claude API borderline scorer: only borderline submissions are sent to a
   Haiku-class model (message body only, never full PII), classified SPAM/HAM
   with a confidence, and quarantined below a configurable HAM confidence
   threshold. Strict fail-open on any API error, timeout or unparseable reply.
-* Guard settings: API key (stored server-side, never echoed back in full),
-  model name, confidence threshold, and a per-day API call cap.
+* Quarantine: every blocked/spam submission is stored (source, form, reason,
+  score, IP, full payload). Admin list under the Guard tab with Preview and row
+  actions — one-click "This was genuine — let it through" (re-runs the genuine
+  path: KDNA Forms entries are un-flagged and re-notified), Delete, and Block
+  this IP. All actions nonce-protected. Daily wp-cron purge of rows older than
+  30 days.
+* Guard settings: honeypot on/off, timing threshold, IP blocklist, API key
+  (stored server-side, never echoed back in full), model name, confidence
+  threshold, and a per-day API call cap.
 
-= 0.2.0 =
-* Guard heuristics engine (PASS/BLOCK/BORDERLINE): honeypot, signed time-to-
-  submit threshold, interaction signal, and local IP blocklist.
-* Guard bound to KDNA Forms via upstream interception and to WooCommerce
-  account forms (registration, login, lost password, review, checkout) when
-  WooCommerce is active. Fail-open throughout.
-* Guard settings: honeypot on/off, timing threshold, IP blocklist.
+Watch (plugin patch-lag monitoring):
+* Scanner: reads installed plugins via get_plugins() and checks each against a
+  swappable vulnerability provider (WPScan or Patchstack) behind one interface.
+  At-risk findings are cached per-plugin (a mid-scan rate limit keeps partial
+  results); daily wp-cron + a manual "Scan now" button drive it; 429 responses
+  back off and pause the run.
+* Dashboard: worst-first table of at-risk plugins (plugin, installed version,
+  severity, fixed-in, patch lag, update link), or a clear "All plugins current"
+  message.
+* Alerts: configurable daily/weekly digest of at-risk plugins (with an optional
+  skip-when-clean), and an immediate URGENT email the moment a scan newly
+  detects a critical vulnerability, de-duplicated so the same CVE does not
+  re-alert every scan. Two separate comma-separated recipient lists (digest /
+  critical), each defaulting to the admin email; malformed addresses ignored.
+  All mail via wp_mail as HTML with a plain-text fallback.
 
-= 0.1.0 =
-* Initial skeleton: top-level admin menu with Guard, Watch and Hub tabs, master
-  enable/disable toggles for Guard and Watch, and the three custom database
-  tables (quarantine, vuln cache, hub log).
+Hub (optional cross-site reporting, off by default):
+* Client sites can POST a compact, HMAC-signed scan summary (site URL, plugin
+  risk list, worst severity, timestamp — metadata only, never content or PII)
+  to a nominated hub after each scan.
+* Receiver: a REST route (/kdna-sentinel/v1/report) active only when "This site
+  is the KDNA hub" is on; verifies the HMAC against the shared secret, rejects
+  unsigned/invalid, and stores accepted reports.
+* Master dashboard: every reporting site in one table — site, worst severity,
+  at-risk count, longest patch lag, last check-in — red-flagging any site with a
+  critical vulnerability or a stale check-in.
+
+Platform:
+* Single plugin, two independently toggleable modules, three custom database
+  tables (quarantine, vulnerability cache, hub log); top-level admin menu with
+  Guard, Watch and Hub tabs.

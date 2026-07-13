@@ -148,6 +148,7 @@ final class KDNA_Sentinel_Core {
 			'guard_honeypot_enabled'      => 1,
 			'guard_timing_threshold'      => 2,
 			'guard_ip_blocklist'          => '',
+			'guard_country_blocklist'     => '',
 
 			// Guard API scorer (Stage 3).
 			'guard_api_key'               => '',
@@ -158,6 +159,7 @@ final class KDNA_Sentinel_Core {
 			// Watch scanner (Stage 5).
 			'watch_provider'              => 'wpscan',
 			'watch_api_key'               => '',
+			'watch_feed_refresh_hours'    => 12,
 
 			// Watch alerts (Stage 6).
 			'watch_digest_recipients'     => '',

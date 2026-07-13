@@ -161,6 +161,13 @@ class KDNA_Sentinel_Settings {
 			$clean['guard_ip_blocklist']  = implode( "\n", $ips );
 		}
 
+		// Guard country blocklist: keep only valid ISO 3166-1 alpha-2 codes.
+		if ( array_key_exists( 'guard_country_blocklist', $input ) ) {
+			require_once KDNA_SENTINEL_DIR . 'includes/guard/class-guard-heuristics.php';
+			$countries                        = KDNA_Sentinel_Guard_Heuristics::parse_country_blocklist( (string) wp_unslash( $input['guard_country_blocklist'] ) );
+			$clean['guard_country_blocklist'] = implode( "\n", $countries );
+		}
+
 		// Guard model name (loose validation).
 		if ( array_key_exists( 'guard_model', $input ) ) {
 			$model                = preg_replace( '/[^a-zA-Z0-9._\-]/', '', (string) wp_unslash( $input['guard_model'] ) );
@@ -192,7 +199,13 @@ class KDNA_Sentinel_Settings {
 		// Watch provider (whitelisted).
 		if ( array_key_exists( 'watch_provider', $input ) ) {
 			$provider                 = sanitize_key( wp_unslash( $input['watch_provider'] ) );
-			$clean['watch_provider']  = in_array( $provider, array( 'wpscan', 'patchstack' ), true ) ? $provider : 'wpscan';
+			$clean['watch_provider']  = in_array( $provider, array( 'wpscan', 'patchstack', 'wordfence' ), true ) ? $provider : 'wpscan';
+		}
+
+		// Watch vulnerability-feed refresh interval (whitelisted hours).
+		if ( array_key_exists( 'watch_feed_refresh_hours', $input ) ) {
+			$hours                                = absint( $input['watch_feed_refresh_hours'] );
+			$clean['watch_feed_refresh_hours']    = in_array( $hours, array( 6, 12, 24 ), true ) ? $hours : 12;
 		}
 
 		// Watch API key: same masking rules as the Guard key.

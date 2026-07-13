@@ -62,8 +62,11 @@ final class KDNA_Sentinel_Guard {
 		$ip_blocklist     = KDNA_Sentinel_Guard_Heuristics::parse_ip_blocklist(
 			(string) $core->get_setting( 'guard_ip_blocklist', '' )
 		);
+		$country_blocklist = KDNA_Sentinel_Guard_Heuristics::parse_country_blocklist(
+			(string) $core->get_setting( 'guard_country_blocklist', '' )
+		);
 
-		$heuristics = new KDNA_Sentinel_Guard_Heuristics( $honeypot_enabled, $threshold, $ip_blocklist );
+		$heuristics = new KDNA_Sentinel_Guard_Heuristics( $honeypot_enabled, $threshold, $ip_blocklist, $country_blocklist );
 
 		$this->hooks = new KDNA_Sentinel_Guard_Hooks( $heuristics, $honeypot_enabled );
 		$this->hooks->register();
