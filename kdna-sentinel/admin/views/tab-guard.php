@@ -124,7 +124,8 @@ if ( isset( $kdna_notices[ $kdna_notice ] ) ) {
 			<td>
 				<?php // Hidden companion so de-selecting every country reliably clears the list. ?>
 				<input type="hidden" name="<?php echo esc_attr( $option ); ?>[guard_country_blocklist_submitted]" value="1" />
-				<select id="kdna-sentinel-country-blocklist" class="kdna-country-select" multiple size="12"
+				<select id="kdna-sentinel-country-blocklist" class="kdna-country-select kdna-tags-enhance" multiple size="12"
+					data-placeholder="<?php esc_attr_e( 'Search for a country…', 'kdna-sentinel' ); ?>"
 					name="<?php echo esc_attr( $option ); ?>[guard_country_blocklist][]">
 					<?php foreach ( KDNA_Sentinel_Guard_Countries::sorted_by_name() as $kdna_code => $kdna_name ) : ?>
 						<option value="<?php echo esc_attr( $kdna_code ); ?>" <?php selected( isset( $selected_countries[ $kdna_code ] ) ); ?>>
@@ -133,7 +134,7 @@ if ( isset( $kdna_notices[ $kdna_notice ] ) ) {
 					<?php endforeach; ?>
 				</select>
 				<p class="description">
-					<?php esc_html_e( 'Select the countries to block. Hold Ctrl (Cmd on Mac) to pick several, or drag to select a range. Submissions from the chosen countries are blocked outright. Select none to disable this check.', 'kdna-sentinel' ); ?>
+					<?php esc_html_e( 'Search for a country and click to add it; each blocked country appears as a tag with a × to remove it. Add as many as you like. Submissions from the chosen countries are blocked outright; remove them all to disable this check.', 'kdna-sentinel' ); ?>
 				</p>
 				<p class="description">
 					<?php esc_html_e( 'The visitor country is read from a CDN header (Cloudflare / CloudFront) when present, otherwise from WooCommerce\'s bundled geolocation database. When the country cannot be determined, this check is skipped (fail-open).', 'kdna-sentinel' ); ?>
