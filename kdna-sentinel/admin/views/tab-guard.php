@@ -18,6 +18,16 @@ $honeypot_on     = ! empty( $settings['guard_honeypot_enabled'] );
 $threshold       = isset( $settings['guard_timing_threshold'] ) ? (int) $settings['guard_timing_threshold'] : 2;
 $ip_blocklist    = isset( $settings['guard_ip_blocklist'] ) ? (string) $settings['guard_ip_blocklist'] : '';
 $country_blocklist = isset( $settings['guard_country_blocklist'] ) ? (string) $settings['guard_country_blocklist'] : '';
+
+// Currently-blocked country codes, as a lookup for pre-selecting the dropdown.
+$selected_countries = array();
+foreach ( preg_split( '/[\r\n,]+/', $country_blocklist ) as $kdna_cc ) {
+	$kdna_cc = strtoupper( trim( $kdna_cc ) );
+	if ( preg_match( '/^[A-Z]{2}$/', $kdna_cc ) ) {
+		$selected_countries[ $kdna_cc ] = true;
+	}
+}
+require_once KDNA_SENTINEL_DIR . 'includes/guard/class-guard-countries.php';
 $api_key         = isset( $settings['guard_api_key'] ) ? (string) $settings['guard_api_key'] : '';
 $api_key_set     = ( '' !== $api_key );
 $api_key_last4   = $api_key_set ? substr( $api_key, -4 ) : '';
@@ -112,11 +122,18 @@ if ( isset( $kdna_notices[ $kdna_notice ] ) ) {
 				<label for="kdna-sentinel-country-blocklist"><?php esc_html_e( 'Country blocklist', 'kdna-sentinel' ); ?></label>
 			</th>
 			<td>
-				<textarea id="kdna-sentinel-country-blocklist" class="large-text code" rows="4"
-					name="<?php echo esc_attr( $option ); ?>[guard_country_blocklist]"
-					placeholder="RU&#10;CN&#10;KP"><?php echo esc_textarea( $country_blocklist ); ?></textarea>
+				<?php // Hidden companion so de-selecting every country reliably clears the list. ?>
+				<input type="hidden" name="<?php echo esc_attr( $option ); ?>[guard_country_blocklist_submitted]" value="1" />
+				<select id="kdna-sentinel-country-blocklist" class="kdna-country-select" multiple size="12"
+					name="<?php echo esc_attr( $option ); ?>[guard_country_blocklist][]">
+					<?php foreach ( KDNA_Sentinel_Guard_Countries::sorted_by_name() as $kdna_code => $kdna_name ) : ?>
+						<option value="<?php echo esc_attr( $kdna_code ); ?>" <?php selected( isset( $selected_countries[ $kdna_code ] ) ); ?>>
+							<?php echo esc_html( $kdna_name . ' (' . $kdna_code . ')' ); ?>
+						</option>
+					<?php endforeach; ?>
+				</select>
 				<p class="description">
-					<?php esc_html_e( 'One two-letter ISO country code per line (e.g. RU, CN, KP). Submissions from these countries are blocked outright. Entries that are not valid two-letter codes are dropped on save.', 'kdna-sentinel' ); ?>
+					<?php esc_html_e( 'Select the countries to block. Hold Ctrl (Cmd on Mac) to pick several, or drag to select a range. Submissions from the chosen countries are blocked outright. Select none to disable this check.', 'kdna-sentinel' ); ?>
 				</p>
 				<p class="description">
 					<?php esc_html_e( 'The visitor country is read from a CDN header (Cloudflare / CloudFront) when present, otherwise from WooCommerce\'s bundled geolocation database. When the country cannot be determined, this check is skipped (fail-open).', 'kdna-sentinel' ); ?>

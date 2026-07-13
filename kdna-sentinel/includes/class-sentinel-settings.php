@@ -161,10 +161,17 @@ class KDNA_Sentinel_Settings {
 			$clean['guard_ip_blocklist']  = implode( "\n", $ips );
 		}
 
-		// Guard country blocklist: keep only valid ISO 3166-1 alpha-2 codes.
-		if ( array_key_exists( 'guard_country_blocklist', $input ) ) {
+		// Guard country blocklist: a multi-select posts an array of ISO 3166-1
+		// alpha-2 codes. The hidden *_submitted marker means the field was on the
+		// form, so an empty selection clears the list instead of being ignored by
+		// the merge. A plain string (legacy/programmatic) is still accepted.
+		if ( array_key_exists( 'guard_country_blocklist', $input ) || ! empty( $input['guard_country_blocklist_submitted'] ) ) {
 			require_once KDNA_SENTINEL_DIR . 'includes/guard/class-guard-heuristics.php';
-			$countries                        = KDNA_Sentinel_Guard_Heuristics::parse_country_blocklist( (string) wp_unslash( $input['guard_country_blocklist'] ) );
+			$raw_countries = isset( $input['guard_country_blocklist'] ) ? wp_unslash( $input['guard_country_blocklist'] ) : array();
+			if ( is_array( $raw_countries ) ) {
+				$raw_countries = implode( "\n", $raw_countries );
+			}
+			$countries                        = KDNA_Sentinel_Guard_Heuristics::parse_country_blocklist( (string) $raw_countries );
 			$clean['guard_country_blocklist'] = implode( "\n", $countries );
 		}
 

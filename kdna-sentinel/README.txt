@@ -3,7 +3,7 @@ Contributors: krulldna
 Requires at least: 6.5
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.4.0
+Stable tag: 0.4.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,12 @@ No. Sentinel is not an edge firewall and does not block traffic. It complements
 those tools by covering form spam and plugin patch-lag.
 
 == Changelog ==
+
+= 0.4.1 =
+* Guard: the country blocklist is now a multi-select list of country names (all
+  ISO 3166-1 countries) instead of a type-in list of codes — pick countries by
+  name, no need to remember two-letter codes. Existing saved codes are preserved
+  and pre-selected; the stored format is unchanged.
 
 = 0.4.0 =
 * Watch: a "Vulnerability data refresh" setting on the Watch tab — Every 6
